@@ -269,3 +269,61 @@ def get_processed_player_match_positions(drop: bool = True):
     
     return final_espn_player_pos_df.reset_index(drop = True)
 
+def get_match_formations():
+    espn_data = get_processed_player_match_positions(drop = False)
+    espn_data = espn_data.set_index(['matchId', 'teamId'])
+
+    label_to_category = {'GK': 'GK',
+                        'LB': 'DF',
+                        'CB': 'DF',
+                        'RB': 'DF',
+                        'LM': 'MD',
+                        'CM': 'MD',
+                        'RM': 'MD',
+                        'LW': 'FW',
+                        'CF': 'FW',
+                        'RW': 'FW'}
+
+    espn_data_simplified = espn_data.copy()
+    espn_data_simplified['category'] = espn_data_simplified['posLabel'].map(label_to_category)
+
+    def match_lineup_to_formation(df):
+        pos_counts = df['category'].value_counts()
+        num_defense = pos_counts['DF'].item()
+        num_mid = pos_counts['MD'].item()
+        num_forward = pos_counts['FW'].item()
+        if (num_defense + num_mid + num_forward != 10):
+            return ['Invalid']
+        else:
+            return [(num_defense, num_mid, num_forward)]
+
+    formations = []
+    all_multi_indices = espn_data_simplified.index.drop_duplicates()
+    for multi_index in all_multi_indices:
+        match_lineup = espn_data_simplified.loc[multi_index]
+        formations.append(match_lineup_to_formation(match_lineup))
+
+    match_formations = pd.DataFrame(formations, index = all_multi_indices, columns = ['formation'])
+    match_formations = match_formations[match_formations['formation'] != 'Invalid']
+
+    # treat 4-2-4 as 4-4-2 (since LW and RW are probably LM and RM)
+    # treat 2-5-3 as 4-3-3 (since LM and RM are probably LB and RB)
+    correct_espn_formations = [
+        (5, 4, 1), 
+        (5, 3, 2),
+        (4, 5, 1),
+        (4, 4, 2), 
+        (4, 3, 3),
+        (3, 5, 2), 
+        (3, 4, 3), 
+    ]
+
+    formation_corrector = {formation: formation for formation in correct_espn_formations}
+    formation_corrector.update({
+        (4, 2, 4): (4, 4, 2),
+        (2, 5, 3): (4, 3, 3)
+    })
+
+    match_formations['formation'] = match_formations['formation'].map(formation_corrector)
+
+    return match_formations
