@@ -1,0 +1,13 @@
+.env
+
+.log
+
+.vscode/
+
+__pycache__
+
+foo/
+
+.venv/
+
+demo.ipynb
