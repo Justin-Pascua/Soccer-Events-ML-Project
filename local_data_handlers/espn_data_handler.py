@@ -269,6 +269,26 @@ def get_processed_player_match_positions(drop: bool = True):
     
     return final_espn_player_pos_df.reset_index(drop = True)
 
+
+admissible_formations = [
+    (5, 4, 1), 
+    (5, 3, 2),
+    (4, 4, 2), 
+    (4, 3, 3),
+    (3, 5, 2), 
+    (3, 4, 3), 
+]
+
+# treat 4-2-4 as 4-4-2 (since LW and RW are probably LM and RM)
+# treat 4-5-1 as 4-3-3 (since LM and RM are probably LW and RW)
+# treat 2-5-3 as 4-3-3 (since LM and RM are probably LB and RB)
+formation_corrector = {formation: formation for formation in admissible_formations}
+formation_corrector.update({
+    (4, 2, 4): (4, 4, 2),
+    (4, 5, 1): (4, 3, 3),
+    (2, 5, 3): (4, 3, 3)
+})
+
 def get_match_formations():
     espn_data = get_processed_player_match_positions(drop = False)
     espn_data = espn_data.set_index(['matchId', 'teamId'])
@@ -305,24 +325,6 @@ def get_match_formations():
 
     match_formations = pd.DataFrame(formations, index = all_multi_indices, columns = ['formation'])
     match_formations = match_formations[match_formations['formation'] != 'Invalid']
-
-    # treat 4-2-4 as 4-4-2 (since LW and RW are probably LM and RM)
-    # treat 2-5-3 as 4-3-3 (since LM and RM are probably LB and RB)
-    correct_espn_formations = [
-        (5, 4, 1), 
-        (5, 3, 2),
-        (4, 5, 1),
-        (4, 4, 2), 
-        (4, 3, 3),
-        (3, 5, 2), 
-        (3, 4, 3), 
-    ]
-
-    formation_corrector = {formation: formation for formation in correct_espn_formations}
-    formation_corrector.update({
-        (4, 2, 4): (4, 4, 2),
-        (2, 5, 3): (4, 3, 3)
-    })
 
     match_formations['formation'] = match_formations['formation'].map(formation_corrector)
 
