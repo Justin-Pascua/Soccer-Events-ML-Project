@@ -279,6 +279,9 @@ admissible_formations = [
     (3, 4, 3), 
 ]
 
+formation_encoder = {formation: i for i, formation in enumerate(admissible_formations)}
+formation_decoder = {i: formation for i, formation in enumerate(admissible_formations)}
+
 # treat 4-2-4 as 4-4-2 (since LW and RW are probably LM and RM)
 # treat 4-5-1 as 4-3-3 (since LM and RM are probably LW and RW)
 # treat 2-5-3 as 4-3-3 (since LM and RM are probably LB and RB)

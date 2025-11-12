@@ -7,7 +7,7 @@ from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import plotly.express as px
 
-from local_data_handlers.espn_data_handler import espn_label_decoder
+from local_data_handlers.espn_data_handler import espn_label_decoder, formation_decoder
 from local_data_handlers.wyscout_metadata_handler import wyscout_label_decoder
 
 def plot_embeddings_2d(embedding_history: list):
@@ -100,6 +100,8 @@ def plot_single_embedding_3d(embedding, label_source: str):
         embedding_df[3] = embedding_df[3].map(wyscout_label_decoder)
     elif label_source == 'espn':
         embedding_df[3] = embedding_df[3].map(espn_label_decoder)
+    elif label_source =='espn_formations':
+        embedding_df[3] = embedding_df[3].map(formation_decoder)
     else:
         embedding_df[3] = embedding_df[3].astype(str)    
 
