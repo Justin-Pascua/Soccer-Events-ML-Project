@@ -11,3 +11,5 @@ foo/
 .venv/
 
 demo.ipynb
+
+model_weights/
