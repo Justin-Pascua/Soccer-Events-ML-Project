@@ -1,4 +1,4 @@
-from classifiers.player_classifier import CustomData, PlayerClassifier
+from nn_models.player_classifier import CustomData, PlayerClassifier
 
 import model_metrics_and_vis.embedding_visualizer as embedding_visualizer
 from model_metrics_and_vis.metrics import Metrics

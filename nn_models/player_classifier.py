@@ -12,7 +12,7 @@ os.environ['TORCH'] = torch.__version__
 from local_data_handlers.wyscout_data_handler import get_full_events_df
 from local_data_handlers.wyscout_metadata_handler import get_eventids_df
 
-import classifiers.heatmap_classifier as heatmap_classifier
+import nn_models.heatmap_classifier as heatmap_classifier
 
 eventids_df = get_eventids_df(verbose = False)
 valid_subeventids = eventids_df[~eventids_df['event'].isin([5,6])]['subevent'].values
