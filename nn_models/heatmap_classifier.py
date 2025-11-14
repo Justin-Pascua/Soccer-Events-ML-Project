@@ -318,12 +318,11 @@ class CustomData:
         return train_image_dataset, val_image_dataset, test_image_dataset
 
 # Model
-EMBEDDING_SIZE = 128
 class HeatmapMLP(nn.Module):
     """
     A multi-layer perceptron which takes in a player's heatmap and classifies their position (e.g. GK, DF, CM, or FW). 
     """
-    def __init__(self, num_classes = 4, embedding_size = EMBEDDING_SIZE):
+    def __init__(self, num_classes = 4, embedding_size = 128):
         super().__init__()
         self.stack = nn.Sequential(
             nn.Linear(50*50, embedding_size),
