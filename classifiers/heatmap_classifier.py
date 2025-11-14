@@ -1,21 +1,15 @@
 import numpy as np
 import pandas as pd
-import ast
 
 import torch
 import torchvision
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 
-import matplotlib.pyplot as plt
-import seaborn as sns
 import time
 
-from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 from scipy import sparse
-
-from torcheval.metrics import MulticlassF1Score
 
 import os
 os.environ['TORCH'] = torch.__version__
