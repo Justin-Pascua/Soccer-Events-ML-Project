@@ -8,7 +8,8 @@ import torch
 from torch_geometric.data import Data
 import math
 
-from nn_models.heatmap_classifier import HeatmapMLP, CustomTransforms, CustomData
+from nn_models.heatmap_data import CustomTransforms, CustomData
+from nn_models.heatmap_classifier import HeatmapMLP
 
 wyscout_metadata_maps = get_metadata_maps(verbose = False)
 player_to_short_name = wyscout_metadata_maps['player_to_short_name']
