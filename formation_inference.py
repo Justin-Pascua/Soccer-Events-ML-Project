@@ -325,22 +325,26 @@ admissable_formations = [
 ]
 
 # test all admissable formations and return the one which minimizes the evaluation metric
-def get_best_formation(original_probabilities):
-    custom_scores = []
+def get_best_formation(original_probabilities, get_choice_matrix: bool = False):
+    
+    best_score = float('inf')
+    best_formation = None
+    best_choice_matrix = None
     for formation in admissable_formations:
         try:
             prob_adjusted, player_categories = segment_players(original_probabilities, formation)
             current_choice_matrix = assign_team_by_formation(prob_adjusted, player_categories, formation)
             current_score = eval_formation_score(original_probabilities, current_choice_matrix, formation)            
-            custom_scores.append((formation, current_score))
+            if current_score < best_score:
+                best_score = current_score
+                best_formation = formation
+                if get_choice_matrix:
+                    best_choice_matrix = current_choice_matrix
         except:
             print(f'Error while trying {formation}')
             raise
-    
-    custom_scores.sort(key = lambda x: x[1])
-    
-    return custom_scores[0][0]
-
+        
+    return (best_formation, best_choice_matrix) if get_choice_matrix else best_formation
 
 
 
