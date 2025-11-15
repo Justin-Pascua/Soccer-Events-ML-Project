@@ -6,7 +6,7 @@ import os
 os.environ['TORCH'] = torch.__version__
 
 # Model
-class HeatmapMLP(nn.Module):
+class HeatmapClassifier(nn.Module):
     """
     A multi-layer perceptron which takes in a player's heatmap and classifies their position (e.g. GK, DF, CM, or FW). 
     """
@@ -29,13 +29,13 @@ class HeatmapMLP(nn.Module):
         """
         Performs a forward pass given data.
         params:
-            data: a double of the form (input, label), where the input is a torch.Tensor. 
+            data: a tuple where the first element is a torch.Tensor. 
             If is_flattened is false, then the input should be of shape (1, 50, 50) or (N, 1, 50, 50).
             If is_flattened is true, then the input should be of shape (2500) or (N, 2500).
             is_flattened: a bool indicating whether or not the input data has been flattened already
             get_hidden: a bool indicating whether or not to get the hidden layer's output
         """
-        x, _ = data
+        x = data[0]
         if not is_flattened:
             x = x.flatten(start_dim = -3)   # flatten along last 3 dimensions. Works with batches and single inputs
         hidden = self.stack(x)

@@ -3,6 +3,7 @@ from local_data_handlers.wyscout_data_handler import MatchData
 import nn_models.player_data as player_data
 import nn_models.heatmap_data as heatmap_data
 from nn_models.player_classifier import PlayerClassifier
+from nn_models.heatmap_classifier import HeatmapClassifier
 
 
 import torch
@@ -11,7 +12,7 @@ import torch.nn as nn
 # take data in MatchData instance and convert to model input
 def match_data_to_model_input(current_match: MatchData):
     """
-    Convert MatchData instance to model input for PlayerClassifier.
+    Convert MatchData instance to model input for PlayerClassifier or HeatmapClassifier.
     params:
         current_match: a MatchData instance storing data for the desired match
     """
@@ -47,11 +48,11 @@ def match_data_to_model_input(current_match: MatchData):
     return team1_model_input, team2_model_input
 
 # applying model to match data container
-def apply_model_to_match(model: PlayerClassifier, current_match: MatchData, output_type: str = 'probabilities'):
+def apply_model_to_match(model: PlayerClassifier | HeatmapClassifier, current_match: MatchData, output_type: str = 'probabilities'):
     """
-    Apply PlayerClassifier model to a MatchData instance to get position predictions for players on both teams.
+    Apply PlayerClassifier or HeatmapClassifier model to a MatchData instance to get position predictions for players on both teams.
     params:
-        model: a PlayerClassifier model
+        model: a PlayerClassifier or HeatmapClassifier model
         current_match: a MatchData instance storing data for the desired match
         output_type: a str indicating the type of output desired. Must be either 'probabilities', 'logits', or 'hidden'.
     """
