@@ -93,6 +93,9 @@ class NxPassingNetworks:
         for key, value in team2_edges.items():
             graph_team_2.add_edge(key[0], key[1], weight = value)
 
+        graph_team_1.remove_edges_from(list(nx.selfloop_edges(graph_team_1)))
+        graph_team_2.remove_edges_from(list(nx.selfloop_edges(graph_team_2)))
+
         return graph_team_1, graph_team_2
 
     @staticmethod
