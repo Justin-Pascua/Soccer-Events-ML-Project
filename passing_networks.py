@@ -9,7 +9,7 @@ from torch_geometric.data import Data
 import math
 
 from nn_models.heatmap_data import CustomTransforms, CustomData
-from nn_models.heatmap_classifier import HeatmapMLP
+from nn_models.heatmap_classifier import HeatmapClassifier
 
 wyscout_metadata_maps = get_metadata_maps(verbose = False)
 player_to_short_name = wyscout_metadata_maps['player_to_short_name']
@@ -669,7 +669,7 @@ class PygPassingNetworks:
 
     @staticmethod
     def generate_pyg_graphs_from_competition_v3(current_competition: CompetitionClient,
-                                                heatmap_model: HeatmapMLP, 
+                                                heatmap_model: HeatmapClassifier, 
                                                 verbose: bool = True):
         """
         Generates passing networks as torch_geometric.data.Data objects for all matches in the current competition. 
@@ -855,7 +855,7 @@ class PygPassingNetworks:
         return graphs
     
     @staticmethod
-    def get_all_graphs_as_pyg(version: int = 2, model: HeatmapMLP = None, 
+    def get_all_graphs_as_pyg(version: int = 2, model: HeatmapClassifier = None, 
                               verbose: bool = True, 
                               connection_string: str = "mongodb://localhost:27017/"):
         """
