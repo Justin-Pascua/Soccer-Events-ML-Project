@@ -11,10 +11,12 @@ class RemoteMatchData:
 
         # get events_df
         events = client['soccer_events'][f'events_{competition_string}'].find_pandas_all({'matchId': wyid})
-        events.drop(columns = ['_id', ''], inplace = True)
-        events['positions'] = events['positions'].apply(            # convert positions from string to list of dicts
-            lambda x: ast.literal_eval(x.replace('} {', '}, {'))    
-        )
+        events.drop(columns = ['_id'], inplace = True)
+
+        # convert to format compatible with local_data_handlers
+        events['positions'] = events.apply(lambda row: [{'y': row['initY'], 'x': row['initX']}], axis = 1)
+        events['tags'] = events['acc'].apply(lambda x: [1801] if x else [])
+        events.drop(columns = ['initX', 'initY', 'acc'], inplace = True)
         self.events_df = events
 
         # get match details
