@@ -1,0 +1,220 @@
+from local_data_handlers.wyscout_metadata_handler import get_players_maps, get_teams_map
+from local_data_handlers.espn_data_handler import espn_label_decoder
+from remote_data_handlers.remote_match_data import RemoteMatchData
+
+from nn_models.player_classifier import PlayerClassifier
+from nn_models.heatmap_classifier import HeatmapClassifier
+from nn_models.heatmap_autoencoder import HeatmapAutoencoder
+from nn_models.utils import apply_model_to_match
+from formation_inference import get_best_formation
+import passing_networks
+
+import torch
+import networkx as nx
+import numpy as np
+import pandas as pd
+import ast
+
+import matplotlib.pyplot as plt
+from matplotlib.patches import Ellipse
+
+CATEGORIES = ['GK', 'DF', 'MD', 'FW']
+POS_TO_CATEGORY = {
+    'GK': 'GK',
+    'LB': 'DF',
+    'CB': 'DF',
+    'RB': 'DF',
+    'CM': 'MD',
+    'LM': 'MD',
+    'RM': 'MD',
+    'LW': 'FW',
+    'RW': 'FW',
+    'CF': 'FW',
+}
+GK_VERTICAL = 8
+DEF_VERTICAL = 15 
+MIDFIELD_VERTICAL = 30
+FORWARD_VERTICAL = 42
+
+LEFT_HORIZONTAL = 10
+MIDDLE_HORIZONTAL = 50
+RIGHT_HORIZONTAL = 90
+
+player_to_short_name, player_to_full_name, _ , _ = get_players_maps(verbose = False)
+teams_map = get_teams_map(verbose = False)
+
+def get_roles_df(model_output, player_wyids, get_formation = False):
+    formation, choice_matrix = get_best_formation(model_output, get_choice_matrix = True)
+
+    classes = choice_matrix.argmax(dim = 1).tolist()
+    roles = {player_wyids[i]: espn_label_decoder[classes[i]] for i in range(11)}
+    roles_df = pd.DataFrame(roles.items(), columns = ['wyId', 'predictedPosition'])
+    roles_df['predictedCategory'] = roles_df['predictedPosition'].map(POS_TO_CATEGORY)
+    if get_formation:
+        return roles_df, formation
+    else:
+        return roles_df
+    
+
+
+def get_def_graph_pos(def_roles: pd.DataFrame, pos: dict, wide_exists: bool):
+    num_defenders = len(def_roles)
+    if wide_exists:
+        lb_player = def_roles[def_roles['predictedPosition'] == 'LB']['wyId'].iloc[0]
+        rb_player = def_roles[def_roles['predictedPosition'] == 'RB']['wyId'].iloc[0]
+        pos[lb_player] = (DEF_VERTICAL+2, LEFT_HORIZONTAL)
+        pos[rb_player] = (DEF_VERTICAL+2, RIGHT_HORIZONTAL)
+        num_defenders -= 2
+
+    center_y_positions = np.linspace(MIDDLE_HORIZONTAL - 30, MIDDLE_HORIZONTAL + 30, num_defenders + 2)[1:-1]
+    center_players = def_roles[def_roles['predictedPosition'] == 'CB']
+    for i, player_id in enumerate(center_players['wyId']):
+        pos[player_id] = (DEF_VERTICAL, center_y_positions[i])
+
+def get_mid_graph_pos(mid_roles: pd.DataFrame, pos: dict, wide_exists: bool):
+    num_midfielders = len(mid_roles)
+    if wide_exists:
+        lm_player = mid_roles[mid_roles['predictedPosition'] == 'LM']['wyId'].iloc[0]
+        rm_player = mid_roles[mid_roles['predictedPosition'] == 'RM']['wyId'].iloc[0]
+        pos[lm_player] = (MIDFIELD_VERTICAL, LEFT_HORIZONTAL)
+        pos[rm_player] = (MIDFIELD_VERTICAL, RIGHT_HORIZONTAL)
+        num_midfielders -= 2
+    
+    center_y_positions = np.linspace(LEFT_HORIZONTAL + 10, RIGHT_HORIZONTAL - 10, num_midfielders + 2)[1:-1]
+    center_players = mid_roles[mid_roles['predictedPosition'] == 'CM']
+    for i, player_id in enumerate(center_players['wyId']):
+        delta = 4*(-1)**i if num_midfielders == 3 else 0
+        pos[player_id] = (MIDFIELD_VERTICAL + delta, center_y_positions[i])
+
+def get_forward_graph_pos(forward_roles: pd.DataFrame, pos: dict, wide_exists: bool):
+    num_forwards = len(forward_roles)
+    if wide_exists:
+        lw_player = forward_roles[forward_roles['predictedPosition'] == 'LW']['wyId'].iloc[0]
+        rw_player = forward_roles[forward_roles['predictedPosition'] == 'RW']['wyId'].iloc[0]
+        pos[lw_player] = (FORWARD_VERTICAL, LEFT_HORIZONTAL-3)
+        pos[rw_player] = (FORWARD_VERTICAL, RIGHT_HORIZONTAL+3)
+        num_forwards -= 2
+    
+    center_x_positions = None
+    if num_forwards == 1:
+        center_x_positions = [MIDDLE_HORIZONTAL]
+    else:
+        center_x_positions = [MIDDLE_HORIZONTAL - 15, MIDDLE_HORIZONTAL + 15]
+        
+    center_players = forward_roles[forward_roles['predictedPosition'] == 'CF']
+    for i, player_id in enumerate(center_players['wyId']):
+        pos[player_id] = (FORWARD_VERTICAL, center_x_positions[i])
+
+def assignments_to_graph_pos(team_roles: pd.DataFrame, formation: tuple):
+    pos = dict()
+    
+    gk_player = team_roles[team_roles['predictedCategory'] == 'GK']['wyId'].iloc[0]
+    pos[gk_player] = (GK_VERTICAL, MIDDLE_HORIZONTAL)
+
+    wide_def_exists = formation[0] > 3
+    wide_mid_exists = formation[1] > 3
+    wide_fw_exists = formation[2] > 2
+
+    get_def_graph_pos(team_roles[team_roles['predictedCategory'] == 'DF'], pos, wide_def_exists)
+    get_mid_graph_pos(team_roles[team_roles['predictedCategory'] == 'MD'], pos, wide_mid_exists)
+    get_forward_graph_pos(team_roles[team_roles['predictedCategory'] == 'FW'], pos, wide_fw_exists)
+    
+    return pos
+
+def plot_pitch(ax):
+    """
+    Plot soccer pitch on a given ax
+    """
+    ax.fill_between(range(-1, 102), -1, 101, facecolor = 'green', alpha = 1)
+
+    #Pitch Outline & Centre Line
+    ax.plot([0,0],[0,100], color="white")
+    ax.plot([0,100],[100,100], color="white")
+    ax.plot([100,100],[100,0], color="white")
+    ax.plot([100,0],[0,0], color="white")
+    ax.plot([50,50],[0,100], color="white")
+
+    #Left Penalty Area
+    ax.plot([16,16],[81,19],color="white")
+    ax.plot([0,16],[81,81],color="white")
+    ax.plot([16,0],[19,19],color="white")
+
+    #Right Penalty Area
+    ax.plot([84,100],[81,81],color="white")
+    ax.plot([84,84],[81,19],color="white")
+    ax.plot([84,100],[19,19],color="white")
+
+    #Left 6-yard Box
+    ax.plot([0, 6],[63,63],color="white")
+    ax.plot([6, 6],[63,37],color="white")
+    ax.plot([6, 0],[37,37],color="white")
+
+    #Right 6-yard Box
+    ax.plot([100, 94],[63, 63],color="white")
+    ax.plot([94, 94],[63, 37],color="white")
+    ax.plot([94, 100],[37, 37],color="white")
+
+    #Prepare Circles
+    centreCircle = Ellipse((50, 50), width=30, height=39, edgecolor="white", facecolor="None", lw=1.8)
+    centreSpot = Ellipse((50, 50), width=1, height=1.5, edgecolor="white", facecolor="white", lw=1.8)
+    leftPenSpot = Ellipse((10, 50), width=1, height=1.5, edgecolor="white", facecolor="white", lw=1.8)
+    rightPenSpot = Ellipse((90, 50), width=1, height=1.5, edgecolor="white", facecolor="white", lw=1.8)
+
+    #Draw Circles
+    ax.add_patch(centreCircle)
+    ax.add_patch(centreSpot)
+    ax.add_patch(leftPenSpot)
+    ax.add_patch(rightPenSpot)
+
+    #limit axis
+    ax.set_xlim(-1,101)
+    ax.set_ylim(-1,101)
+    # Erase axes. Note that this approach allows us to keep axis labels
+    ax.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
+    ax.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
+    for e in ['top', 'right', 'bottom', 'left']:
+        ax.spines[e].set_visible(False)
+    ax.invert_yaxis()
+
+def reflect_single_pos(pos: tuple):
+    return (100 - pos[0], 100 - pos[1])
+
+def name_standardizer(name: str):
+    name_parts = name.split(' ')
+    if len(name_parts) == 2:
+        return f"{name_parts[0][0]}. {name_parts[1]}"
+    elif len(name_parts) > 2:
+        return f"{name_parts[0][0]}. {name_parts[-1]}"
+    else:
+        return name
+
+def draw_passing_network(G: nx.DiGraph, pos: dict):
+    nx.draw_networkx_nodes(G, pos)
+    labels = {node: f'{name_standardizer(player_to_short_name[node])}' for node in G.nodes()}
+    labels = nx.draw_networkx_labels(G, pos, labels = labels, verticalalignment = 'top', 
+                                     font_color = 'white', font_size = 10)
+
+    edge_weights = np.array([G[u][v]['weight'] for u, v in G.edges()])
+    nx.draw_networkx_edges(G, pos, alpha = edge_weights/edge_weights.max(), )
+
+def plot_match(current_match: RemoteMatchData, position_model: PlayerClassifier | HeatmapClassifier):
+    team1_prob, team2_prob = apply_model_to_match(position_model, current_match, output_type = 'probabilities')
+    team1_roles, team1_formation = get_roles_df(team1_prob, current_match.team1_players, get_formation = True)
+    team2_roles, team2_formation = get_roles_df(team2_prob, current_match.team2_players, get_formation = True)
+
+    pos_team1 = assignments_to_graph_pos(team1_roles, team1_formation)
+    pos_team2 = assignments_to_graph_pos(team2_roles, team2_formation)
+    pos_team2 = {player: reflect_single_pos(coords) for player, coords in pos_team2.items()}
+
+    fig, ax = plt.subplots(figsize = (12, 7))
+    plot_pitch(ax)
+
+    team1_g, team2_g = passing_networks.NxPassingNetworks.generate_nx_graph_from_match(current_match)
+
+    draw_passing_network(team1_g, pos_team1)
+    draw_passing_network(team2_g, pos_team2)
+
+    title = f'{teams_map[current_match.team1]} vs {teams_map[current_match.team2]} - {current_match.details["dateutc"].split(" ")[0]}'
+
+    plt.title(title)
+    plt.show()
