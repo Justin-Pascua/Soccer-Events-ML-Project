@@ -1,15 +1,9 @@
 .env
-
 .log
-
 .vscode/
-
 __pycache__
-
-foo/
-
 .venv/
-
 demo.ipynb
-
 model_weights/
+.streamlit/secrets.toml
+match_metadata/
