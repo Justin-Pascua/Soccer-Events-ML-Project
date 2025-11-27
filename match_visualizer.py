@@ -217,4 +217,4 @@ def plot_match(current_match: RemoteMatchData, position_model: PlayerClassifier 
     title = f'{teams_map[current_match.team1]} vs {teams_map[current_match.team2]} - {current_match.details["dateutc"].split(" ")[0]}'
 
     plt.title(title)
-    plt.show()
+    return fig
