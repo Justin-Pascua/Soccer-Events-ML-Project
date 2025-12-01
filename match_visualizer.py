@@ -43,7 +43,17 @@ RIGHT_HORIZONTAL = 90
 player_to_short_name, player_to_full_name, _ , _ = get_players_maps(verbose = False)
 teams_map = get_teams_map(verbose = False)
 
-def get_roles_df(model_output, player_wyids, get_formation = False):
+def get_roles_df(model_output: torch.Tensor, player_wyids: list, get_formation: bool = False):
+    """
+    Given model predictions on a specific team, and given the player's wyId's,
+    this function returns a dataframe containing whose columns are ['wyId', 'predictedPosition', 'predictedCategory']
+    params:
+        model_output: an 11x10 torch.Tensor representing a model's position predictions on a team
+        player_wyids: a list of player wyId's in the given team. The order of the id's should match 
+        the ordering of the players in model_output (e.g. if player 229 is represented in row 3 of model_output,
+        then 229 should be the 3rd entry of player_wyids)
+        get_formation: a bool indicating whether to return the formation predicted by formation_inference.get_best_formation()
+    """
     formation, choice_matrix = get_best_formation(model_output, get_choice_matrix = True)
 
     classes = choice_matrix.argmax(dim = 1).tolist()
@@ -58,6 +68,14 @@ def get_roles_df(model_output, player_wyids, get_formation = False):
 
 
 def get_def_graph_pos(def_roles: pd.DataFrame, pos: dict, wide_exists: bool):
+    """
+    Helper function of assignments_to_graph_pos. Given a dataframe of defenders and a pre-existing 
+    pos dict, this function assigns positions to the defenders.
+    params:
+        def_roles: a dataframe containing the wyId's and position of the defensive players in a given team
+        pos: a dict whose keys are player wyId's, and whose values are tuples representing 2d coords in [0, 100] x [0, 100]
+        wide_exists: a bool indicating whether to assign wide positions (i.e. LB and RB)
+    """
     num_defenders = len(def_roles)
     if wide_exists:
         lb_player = def_roles[def_roles['predictedPosition'] == 'LB']['wyId'].iloc[0]
@@ -72,6 +90,14 @@ def get_def_graph_pos(def_roles: pd.DataFrame, pos: dict, wide_exists: bool):
         pos[player_id] = (DEF_VERTICAL, center_y_positions[i])
 
 def get_mid_graph_pos(mid_roles: pd.DataFrame, pos: dict, wide_exists: bool):
+    """
+    Helper function of assignments_to_graph_pos. Given a dataframe of midfielders and a pre-existing 
+    pos dict, this function assigns positions to the defenders.
+    params:
+        mid_roles: a dataframe containing the wyId's and position of the midfield players in a given team
+        pos: a dict whose keys are player wyId's, and whose values are tuples representing 2d coords in [0, 100] x [0, 100]
+        wide_exists: a bool indicating whether to assign wide positions (i.e. LM and RM)
+    """
     num_midfielders = len(mid_roles)
     if wide_exists:
         lm_player = mid_roles[mid_roles['predictedPosition'] == 'LM']['wyId'].iloc[0]
@@ -87,6 +113,14 @@ def get_mid_graph_pos(mid_roles: pd.DataFrame, pos: dict, wide_exists: bool):
         pos[player_id] = (MIDFIELD_VERTICAL + delta, center_y_positions[i])
 
 def get_forward_graph_pos(forward_roles: pd.DataFrame, pos: dict, wide_exists: bool):
+    """
+    Helper function of assignments_to_graph_pos. Given a dataframe of forwards and a pre-existing 
+    pos dict, this function assigns positions to the defenders.
+    params:
+        forward_roles: a dataframe containing the wyId's and position of the forward players in a given team
+        pos: a dict whose keys are player wyId's, and whose values are tuples representing 2d coords in [0, 100] x [0, 100]
+        wide_exists: a bool indicating whether to assign wide positions (i.e. LW and RW)
+    """
     num_forwards = len(forward_roles)
     if wide_exists:
         lw_player = forward_roles[forward_roles['predictedPosition'] == 'LW']['wyId'].iloc[0]
@@ -106,6 +140,15 @@ def get_forward_graph_pos(forward_roles: pd.DataFrame, pos: dict, wide_exists: b
         pos[player_id] = (FORWARD_VERTICAL, center_x_positions[i])
 
 def assignments_to_graph_pos(team_roles: pd.DataFrame, formation: tuple):
+    """
+    Given a dataframe of team roles (as produced by get_roles_df) and a formation tuple,
+    this function returns a dict whose keys are player wyIds, and whose values are tuples 
+    representing 2d coords in [0, 100] x [0, 100]
+    params:
+        team_roles: a dataframe whose columns are ['wyId', 'predictedPosition', 'predictedCategory'], 
+        as produced by get_roles_df
+        formation: a triple representing a soccer formation (e.g. (4,3,3))
+    """
     pos = dict()
     
     gk_player = team_roles[team_roles['predictedCategory'] == 'GK']['wyId'].iloc[0]
@@ -121,9 +164,10 @@ def assignments_to_graph_pos(team_roles: pd.DataFrame, formation: tuple):
     
     return pos
 
-def plot_pitch(ax):
+
+def plot_pitch_plotly(ax):
     """
-    Plot soccer pitch on a given ax
+    Plot soccer pitch on a given ax using matplotlib.pyplot
     """
     ax.fill_between(range(-1, 102), -1, 101, facecolor = 'green', alpha = 1)
 
@@ -177,9 +221,23 @@ def plot_pitch(ax):
     ax.invert_yaxis()
 
 def reflect_single_pos(pos: tuple):
+    """
+    Given a tuple, representing a coord in [0, 100] x [0, 100],
+    this applies the map (x, y) -> (100 - x, 100 - y)
+    params:
+        pos: a tuple representing a 2d coord in [0, 100] x [0, 100]
+    """
     return (100 - pos[0], 100 - pos[1])
 
 def name_standardizer(name: str):
+    """
+    This function standardizes player names.
+    If the name is 1 word, then no change is applied.
+    If the name is 2 words, then the first word is abbreviated.
+    If the name is more than 2 words, then only the first and last word and kept, and the first word is abbreviated.
+    params:
+        name: a string representing a player's name
+    """
     name_parts = name.split(' ')
     if len(name_parts) == 2:
         return f"{name_parts[0][0]}. {name_parts[1]}"
@@ -189,6 +247,12 @@ def name_standardizer(name: str):
         return name
 
 def draw_passing_network(G: nx.DiGraph, pos: dict):
+    """
+    Draws an nx graph with edge opacities dependent on edge weight.
+    params:
+        G: an nx.DiGraph representing a team's passing network
+        pos: a dict of node positions
+    """
     nx.draw_networkx_nodes(G, pos)
     labels = {node: f'{name_standardizer(player_to_short_name[node])}' for node in G.nodes()}
     labels = nx.draw_networkx_labels(G, pos, labels = labels, verticalalignment = 'top', 
@@ -197,7 +261,15 @@ def draw_passing_network(G: nx.DiGraph, pos: dict):
     edge_weights = np.array([G[u][v]['weight'] for u, v in G.edges()])
     nx.draw_networkx_edges(G, pos, alpha = edge_weights/edge_weights.max(), )
 
-def plot_match(current_match: RemoteMatchData, position_model: PlayerClassifier | HeatmapClassifier):
+def plot_match_plotly(current_match: RemoteMatchData, position_model: PlayerClassifier | HeatmapClassifier):
+    """
+    Given a RemoteMatchData instance, this plots (using matplotlib.pyplot) a soccer pitch and the passing networks of
+    the two teams in the given match. This first applies a given model to the current match to produce 
+    predictions which are then used to produce the plots.
+    params:
+        current_match: a RemoteMatchData (or compatible type like MatchData) storing data for the desired match
+        position_model: a PlayerClassifier or HeatmapClassifier model which classifies player positions given match data
+    """
     team1_prob, team2_prob = apply_model_to_match(position_model, current_match, output_type = 'probabilities')
     team1_roles, team1_formation = get_roles_df(team1_prob, current_match.team1_players, get_formation = True)
     team2_roles, team2_formation = get_roles_df(team2_prob, current_match.team2_players, get_formation = True)
@@ -207,7 +279,7 @@ def plot_match(current_match: RemoteMatchData, position_model: PlayerClassifier 
     pos_team2 = {player: reflect_single_pos(coords) for player, coords in pos_team2.items()}
 
     fig, ax = plt.subplots(figsize = (12, 7))
-    plot_pitch(ax)
+    plot_pitch_plotly(ax)
 
     team1_g, team2_g = passing_networks.NxPassingNetworks.generate_nx_graph_from_match(current_match)
 
@@ -218,3 +290,4 @@ def plot_match(current_match: RemoteMatchData, position_model: PlayerClassifier 
 
     plt.title(title)
     return fig
+
