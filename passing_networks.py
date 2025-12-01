@@ -99,6 +99,21 @@ class NxPassingNetworks:
         return graph_team_1, graph_team_2
 
     @staticmethod
+    def add_normalized_edge_weights(G: nx.DiGraph):
+        """
+        Given an nx graph with edges have a 'weight' attribute (which are positive values),
+        this adds an edge attribute named 'normalized_weight' which is the edge weight 
+        normalized by the max edge weight of the graph
+        params:
+            G: an nx.DiGraph whose edges have a 'weight' attribute, which are positive values
+        """
+        weights = [e[-1] for e in G.edges.data('weight')]
+        max_weight = max(weights)
+
+        for edge in G.edges:
+            G.edges[edge]['normalized_weight'] = G.edges[edge]['weight']/max_weight
+    
+    @staticmethod
     def generate_nx_graphs_from_competition(current_competition: CompetitionClient, verbose: bool = True):
         """
         Generates passing networks as nx.DiGraph objects for all matches in the current competition. 
