@@ -7,7 +7,7 @@ from nn_models.heatmap_classifier import HeatmapClassifier
 from nn_models.heatmap_autoencoder import HeatmapAutoencoder
 from nn_models.utils import apply_model_to_match
 from formation_inference import get_best_formation
-import passing_networks
+from passing_networks import NxPassingNetworks as NxUtils
 
 import torch
 import networkx as nx
@@ -17,6 +17,7 @@ import ast
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
+import plotly.graph_objects as go
 
 CATEGORIES = ['GK', 'DF', 'MD', 'FW']
 POS_TO_CATEGORY = {
@@ -43,6 +44,57 @@ RIGHT_HORIZONTAL = 90
 player_to_short_name, player_to_full_name, _ , _ = get_players_maps(verbose = False)
 teams_map = get_teams_map(verbose = False)
 
+#----------------GENERAL----------------
+def name_standardizer(name: str):
+    """
+    This function standardizes player names.
+    If the name is 1 word, then no change is applied.
+    If the name is 2 words, then the first word is abbreviated.
+    If the name is more than 2 words, then only the first and last word and kept, and the first word is abbreviated.
+    params:
+        name: a string representing a player's name
+    """
+    name_parts = name.split(' ')
+    if len(name_parts) == 2:
+        return f"{name_parts[0][0]}. {name_parts[1]}"
+    elif len(name_parts) > 2:
+        return f"{name_parts[0][0]}. {name_parts[-1]}"
+    else:
+        return name
+
+def reflect_single_pos(pos: tuple):
+    """
+    Given a tuple, representing a coord in [0, 100] x [0, 100],
+    this applies the map (x, y) -> (100 - x, 100 - y)
+    params:
+        pos: a tuple representing a 2d coord in [0, 100] x [0, 100]
+    """
+    return (100 - pos[0], 100 - pos[1])
+
+def flip_score_label(score_label: str):
+    first_score, second_score = score_label.split(' - ')
+    return f'{second_score} - {first_score}'
+
+def flip_teams_label(teams_label: str):
+    first_team, second_team = teams_label.split(' - ')
+    return f'{second_team} - {first_team}'
+
+def process_match_label(current_match: RemoteMatchData):
+    """
+    Creates a match label such that current_match.team1 is the team first listed on the label
+    params:
+        current_match: a RemoteMatchData instance storing the data for the given match
+    """
+    raw_label: str = current_match.details['label']
+    team1_str: str = teams_map[current_match.team1]
+    if raw_label.startswith(team1_str):
+        return raw_label
+    else:
+        teams_label, score_label = raw_label.split(', ')
+        teams_label = flip_teams_label(teams_label)
+        score_label = flip_score_label(score_label)
+        return f'{teams_label}, {score_label}'
+
 def get_roles_df(model_output: torch.Tensor, player_wyids: list, get_formation: bool = False):
     """
     Given model predictions on a specific team, and given the player's wyId's,
@@ -64,8 +116,6 @@ def get_roles_df(model_output: torch.Tensor, player_wyids: list, get_formation: 
         return roles_df, formation
     else:
         return roles_df
-    
-
 
 def get_def_graph_pos(def_roles: pd.DataFrame, pos: dict, wide_exists: bool):
     """
@@ -164,8 +214,8 @@ def assignments_to_graph_pos(team_roles: pd.DataFrame, formation: tuple):
     
     return pos
 
-
-def plot_pitch_plotly(ax):
+#----------------PyPlot----------------
+def plot_pitch_pyplot(ax):
     """
     Plot soccer pitch on a given ax using matplotlib.pyplot
     """
@@ -220,32 +270,6 @@ def plot_pitch_plotly(ax):
         ax.spines[e].set_visible(False)
     ax.invert_yaxis()
 
-def reflect_single_pos(pos: tuple):
-    """
-    Given a tuple, representing a coord in [0, 100] x [0, 100],
-    this applies the map (x, y) -> (100 - x, 100 - y)
-    params:
-        pos: a tuple representing a 2d coord in [0, 100] x [0, 100]
-    """
-    return (100 - pos[0], 100 - pos[1])
-
-def name_standardizer(name: str):
-    """
-    This function standardizes player names.
-    If the name is 1 word, then no change is applied.
-    If the name is 2 words, then the first word is abbreviated.
-    If the name is more than 2 words, then only the first and last word and kept, and the first word is abbreviated.
-    params:
-        name: a string representing a player's name
-    """
-    name_parts = name.split(' ')
-    if len(name_parts) == 2:
-        return f"{name_parts[0][0]}. {name_parts[1]}"
-    elif len(name_parts) > 2:
-        return f"{name_parts[0][0]}. {name_parts[-1]}"
-    else:
-        return name
-
 def draw_passing_network(G: nx.DiGraph, pos: dict):
     """
     Draws an nx graph with edge opacities dependent on edge weight.
@@ -261,7 +285,7 @@ def draw_passing_network(G: nx.DiGraph, pos: dict):
     edge_weights = np.array([G[u][v]['weight'] for u, v in G.edges()])
     nx.draw_networkx_edges(G, pos, alpha = edge_weights/edge_weights.max(), )
 
-def plot_match_plotly(current_match: RemoteMatchData, position_model: PlayerClassifier | HeatmapClassifier):
+def plot_match_pyplot(current_match: RemoteMatchData, position_model: PlayerClassifier | HeatmapClassifier):
     """
     Given a RemoteMatchData instance, this plots (using matplotlib.pyplot) a soccer pitch and the passing networks of
     the two teams in the given match. This first applies a given model to the current match to produce 
@@ -279,9 +303,9 @@ def plot_match_plotly(current_match: RemoteMatchData, position_model: PlayerClas
     pos_team2 = {player: reflect_single_pos(coords) for player, coords in pos_team2.items()}
 
     fig, ax = plt.subplots(figsize = (12, 7))
-    plot_pitch_plotly(ax)
+    plot_pitch_pyplot(ax)
 
-    team1_g, team2_g = passing_networks.NxPassingNetworks.generate_nx_graph_from_match(current_match)
+    team1_g, team2_g = NxUtils.generate_nx_graph_from_match(current_match)
 
     draw_passing_network(team1_g, pos_team1)
     draw_passing_network(team2_g, pos_team2)
@@ -289,5 +313,285 @@ def plot_match_plotly(current_match: RemoteMatchData, position_model: PlayerClas
     title = f'{teams_map[current_match.team1]} vs {teams_map[current_match.team2]} - {current_match.details["dateutc"].split(" ")[0]}'
 
     plt.title(title)
+    return fig
+
+#----------------Plotly----------------
+def process_hover_text(d: dict):
+    """
+    Given a dict of position prediction confidence values, 
+    this produces a single string used as hover text of the form
+    'Prediction confidence: POS1: VAL1 | POS2: VAL2 | POS3: VAL3 | Other: VAL4'
+    params:
+        d: a dict whose values are probabilities such that the sum of the dict values does not exceed 1
+    """
+    temp_copy = d.copy()
+    prob_sum = sum(temp_copy.values())
+    temp_copy['Other'] = np.round(1 - prob_sum, 2)
+    output_str = 'Prediction confidence: <br>'
+    for key, value in temp_copy.items():
+        if value > 0:
+            output_str += f'{key}: {value} <br>'
+    return output_str [:-4]
+
+def add_soccer_pitch_plotly(fig: go.Figure):
+    """
+    Adds a soccer pitch plot to a go.Figure object:
+    params:
+        fig: a go.Figure object
+    """
+    # Set background color (entire figure area)
+    fig.update_layout(plot_bgcolor = 'green')
+    
+    # Fill the pitch area with green
+    fig.add_shape(
+        type = "rect",
+        x0 = -1, y0 = -1,
+        x1 = 101, y1 = 101,
+        line = dict(color = 'green', width = 0),
+        fillcolor = 'green',
+        layer = 'below'
+    )
+    
+    # Pitch Outline
+    fig.add_shape(
+        type = "rect",
+        x0 = 0, y0 = 0,
+        x1 = 100, y1 = 100,
+        line = dict(color = 'white', width = 2),
+        fillcolor = 'rgba(0,0,0,0)',
+        layer = 'below'
+    )
+    
+    # Centre Line
+    fig.add_shape(
+        type = "line",
+        x0 = 50, y0 = 0,
+        x1 = 50, y1 = 100,
+        line=dict(color = 'white', width = 2),
+        layer = 'below'
+    )
+    
+    # Left Penalty Area
+    fig.add_shape(
+        type = "rect",
+        x0 = 0, y0 = 19,  # Note: y-values reversed since you invert y-axis
+        x1 = 16, y1 = 81,
+        line = dict(color = 'white', width = 2),
+        fillcolor = 'rgba(0,0,0,0)',
+        layer = 'below'
+    )
+    
+    # Right Penalty Area
+    fig.add_shape(
+        type = "rect",
+        x0 = 84, y0 = 19,
+        x1 = 100, y1 = 81,
+        line = dict(color = 'white', width = 2),
+        fillcolor = 'rgba(0,0,0,0)',
+        layer = 'below'
+    )
+    
+    # Left 6-yard Box
+    fig.add_shape(
+        type = "rect",
+        x0 = 0, y0 = 37,
+        x1 = 6, y1 = 63,
+        line = dict(color = 'white', width = 2),
+        fillcolor = 'rgba(0,0,0,0)',
+        layer = 'below'
+    )
+    
+    # Right 6-yard Box
+    fig.add_shape(
+        type = "rect",
+        x0 = 94, y0 = 37,
+        x1 = 100, y1 = 63,
+        line = dict(color = 'white', width = 2),
+        fillcolor = 'rgba(0,0,0,0)',
+        layer = 'below'
+    )
+    
+    # Centre Circle
+    fig.add_shape(
+        type = "circle",
+        xref = "x", yref = "y",
+        x0 = 35, y0 = 30.5,  # Centered at (50,50) with width=30, height=39
+        x1 = 65, y1 = 69.5,
+        line = dict(color = 'white', width = 2),
+        fillcolor = 'rgba(0,0,0,0)',
+        layer = 'below'
+    )
+    
+    # Centre Spot
+    fig.add_trace(go.Scatter(
+        x = [50], y = [50],
+        mode = 'markers',
+        marker = dict(size = 6, color = 'white'),
+        showlegend = False
+    ))
+    
+    # Left Penalty Spot
+    fig.add_trace(go.Scatter(
+        x = [10], y = [50],
+        mode = 'markers',
+        marker = dict(size = 6, color = 'white'),
+        showlegend = False
+    ))
+    
+    # Right Penalty Spot
+    fig.add_trace(go.Scatter(
+        x = [90], y = [50],
+        mode = 'markers',
+        marker = dict(size = 6, color = 'white'),
+        showlegend = False
+    ))
+    
+    return fig
+
+def add_edge_trace(fig: go.Figure, G: nx.DiGraph):
+    """
+    Adds the edges of an nx.DiGraph to a go.Figure figure.
+    params:
+        fig: a go.Figure object
+        G: an nx.DiGraph representing a team's passing network. The graph's edges must be equipped 
+        with attributes 'normalized_weight' which are values in [0, 1], 'weight' which are 
+        positive integers, and whose nodes are equipped with a 'pos' attribute which are float doubles
+        representing 2d coords in [0, 100] x [0, 100]
+    """
+    for edge in G.edges(data = True):
+        source, target, data = edge
+        source_name = player_to_short_name[source]
+        target_name = player_to_short_name[target]
+        weight = data['normalized_weight']
+        num_passes = data['weight']
+        
+        x0, y0 = G.nodes[source]['pos']
+        x1, y1 = G.nodes[target]['pos']
+
+        x_mid = x0 + 0.7*(x1 - x0)
+        y_mid = y0 + 0.7*(y1 - y0)
+
+        # each line is split near middle, 
+        # so that hover text is triggered in middle of line, and not hidden by node
+        edge_trace_first = go.Scatter(
+            x = [x0, x_mid, x_mid, x1], y = [y0, y_mid, y_mid, y1],
+            hoverinfo = 'text',
+            hovertext = f'Passes from {source_name} to {target_name}: {num_passes}',
+            mode = 'lines',
+            line = dict(color = 'yellow'), 
+            opacity = weight,
+        )
+        
+        fig.add_traces([edge_trace_first])
+
+def add_node_trace(fig: go.Figure, G: nx.DiGraph, team_top_labels: dict, team_top_probs: dict):
+    """
+    Adds the nodes of an nx.DiGraph to a go.Figure figure.
+    params:
+        fig: a go.Figure object
+        G: an nx.DiGraph representing a team's passing network. The graph's edges must be equipped 
+        with attributes 'normalized_weight' which are values in [0, 1], 'weight' which are 
+        positive integers, and whose nodes are equipped with a 'pos' attribute which are float doubles
+        representing 2d coords in [0, 100] x [0, 100]
+        team_top_labels: a dict whose keys are player wyId's, and whose values are 1d tensors of 3 elements, 
+        each representing the top 3 labels predicted by the model for a specific player
+        team_top_probs: a dict whose keys are player wyId's, and whose values are 1d tensors of 3 elements, 
+        each representing the probabilities for the top 3 labels predicted by the model for a specific player
+    """
+    node_x = [G.nodes[node]['pos'][0] for node in G.nodes()]
+    node_y = [G.nodes[node]['pos'][1] for node in G.nodes()] 
+    node_text = [name_standardizer(player_to_short_name[node]) for node in G.nodes()]
+    node_hover_text_dicts = []
+    for node in G.nodes():
+        labels = [espn_label_decoder[e] for e in team_top_labels[node].tolist()]
+        probs = np.round(team_top_probs[node].tolist(), 2).tolist()
+        node_hover_text_dicts.append(dict(zip(labels, probs)))
+    node_hover_text = [process_hover_text(d) for d in node_hover_text_dicts]
+
+    node_trace = go.Scatter(
+        x = node_x, y = node_y,
+        mode = 'markers+text',
+        hoverinfo = 'text',
+        hovertext = node_hover_text,
+        text = node_text,
+        textposition = 'top center',
+        textfont = dict(
+            size = 12,
+            color = 'black'
+        ),
+        marker = dict(
+            size = 10,
+            color = 'lightblue',
+            line = dict(width = 2, color = 'darkblue')
+        )
+    )
+    fig.add_trace(node_trace)
+
+def plot_match_plotly(current_match: RemoteMatchData, position_model: PlayerClassifier | HeatmapClassifier):
+    """
+    Given a RemoteMatchData instance, this plots (using plotly) a soccer pitch and the passing networks of
+    the two teams in the given match. This first applies a given model to the current match to produce 
+    predictions which are then used to produce the plots.
+    params:
+        current_match: a RemoteMatchData (or compatible type like MatchData) storing data for the desired match
+        position_model: a PlayerClassifier or HeatmapClassifier model which classifies player positions given match data
+    """
+    # apply model to match, and process predictions
+    team1_prob, team2_prob = apply_model_to_match(position_model, current_match, output_type = 'probabilities')
+    team1_roles, team1_formation = get_roles_df(team1_prob, current_match.team1_players, get_formation = True)
+    team2_roles, team2_formation = get_roles_df(team2_prob, current_match.team2_players, get_formation = True)
+
+    # assign node coords based on model predictions 
+    pos_team1 = assignments_to_graph_pos(team1_roles, team1_formation)
+    pos_team2 = assignments_to_graph_pos(team2_roles, team2_formation)
+    pos_team2 = {player: reflect_single_pos(coords) for player, coords in pos_team2.items()}
+
+    # create nx graphs
+    team1_g, team2_g = NxUtils.generate_nx_graph_from_match(current_match)
+    nx.set_node_attributes(team1_g, pos_team1, 'pos')
+    nx.set_node_attributes(team2_g, pos_team2, 'pos')
+    NxUtils.add_normalized_edge_weights(team1_g)
+    NxUtils.add_normalized_edge_weights(team2_g)
+
+    # get topk predictions for node hover text
+    team1_top_labels = dict(zip(current_match.team1_players, 
+                                torch.topk(team1_prob, k = 3, dim = 1).indices))
+    team1_top_probs = dict(zip(current_match.team1_players, 
+                            torch.topk(team1_prob, k = 3, dim = 1).values))
+    team2_top_labels = dict(zip(current_match.team2_players, 
+                                torch.topk(team2_prob, k = 3, dim = 1).indices))
+    team2_top_probs = dict(zip(current_match.team2_players, 
+                            torch.topk(team2_prob, k = 3, dim = 1).values))
+
+    
+    # generate plot title
+    label = process_match_label(current_match)
+    title = f"{label} ({current_match.details['dateutc'].split(' ')[0]})"
+    
+    # initialize graph
+    fig = go.Figure(layout = go.Layout(
+                        hovermode = 'closest',
+                        margin = dict(b = 20, l = 20, r = 20, t = 40),
+                        xaxis = dict(showgrid = False, zeroline = False, showticklabels = False,
+                                    range = [-1, 101]),
+                        yaxis = dict(showgrid = False, zeroline = False, showticklabels = False, 
+                                    range = [-1, 101], autorange = 'reversed'),
+                        height = 550,
+                        width = 800,
+                        showlegend = False,
+                        title = dict(
+                            text = title,
+                            x = 0.5,
+                            y = 0.97
+                        )
+                    ))
+
+    # add passing network elements
+    add_edge_trace(fig, team1_g)
+    add_edge_trace(fig, team2_g)
+    add_node_trace(fig, team1_g, team1_top_labels, team1_top_probs)
+    add_node_trace(fig, team2_g, team2_top_labels, team2_top_probs)
+    add_soccer_pitch_plotly(fig)
+    
     return fig
 

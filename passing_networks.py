@@ -958,8 +958,7 @@ def pyg_graph_to_nx_graph(data: Data):
     g.add_weighted_edges_from(weighted_edge_list)
     return g
 
-if __name__ == "__main__": 
-    pass
+
 
 
 
