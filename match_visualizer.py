@@ -71,13 +71,25 @@ def reflect_single_pos(pos: tuple):
     """
     return (100 - pos[0], 100 - pos[1])
 
-def flip_score_label(score_label: str):
-    first_score, second_score = score_label.split(' - ')
-    return f'{second_score} - {first_score}'
-
-def flip_teams_label(teams_label: str):
-    first_team, second_team = teams_label.split(' - ')
-    return f'{second_team} - {first_team}'
+def remove_overtime_suffix(input_str: str):
+    """
+    Removes the ' (E)' or ' (P)' suffix from a string if it exists
+    params:
+        input_str: a string representing an unprocessed match label
+    """
+    if input_str.endswith(' (E)') or input_str.endswith(' (P)'):
+        return input_str[:-4]
+    else:
+        return input_str
+    
+def flip_sublabel(sublabel: str):
+    """
+    Helper function of process_match_label. Flips a string of the form 'x - y' to 'y - x'
+    params:
+        sublabel: a string of the form 'x - y'
+    """
+    x, y = sublabel.split(' - ')
+    return f'{y} - {x}'
 
 def process_match_label(current_match: RemoteMatchData):
     """
@@ -91,9 +103,24 @@ def process_match_label(current_match: RemoteMatchData):
         return raw_label
     else:
         teams_label, score_label = raw_label.split(', ')
-        teams_label = flip_teams_label(teams_label)
-        score_label = flip_score_label(score_label)
+        teams_label = flip_sublabel(teams_label)
+        score_label = flip_sublabel(score_label)
         return f'{teams_label}, {score_label}'
+
+def generate_match_title(current_match: RemoteMatchData):
+    current_match.details['label'] = remove_overtime_suffix(current_match.details['label'])
+    label = process_match_label(current_match)
+
+    teams = label.split(', ')[0]
+    first_team = teams.split(' - ')[0]
+    second_team = teams.split(' - ')[1]
+
+    scores = label.split(', ')[1]
+    first_score = scores.split(' - ')[0]
+    second_score = scores.split(' - ')[1]
+
+    title = f"{first_team} ({first_score}) - ({second_score}) {second_team} ({current_match.details['dateutc'].split(' ')[0]})"
+    return title
 
 def get_roles_df(model_output: torch.Tensor, player_wyids: list, get_formation: bool = False):
     """
@@ -565,8 +592,7 @@ def plot_match_plotly(current_match: RemoteMatchData, position_model: PlayerClas
 
     
     # generate plot title
-    label = process_match_label(current_match)
-    title = f"{label} ({current_match.details['dateutc'].split(' ')[0]})"
+    title = generate_match_title(current_match)
     
     # initialize graph
     fig = go.Figure(layout = go.Layout(
