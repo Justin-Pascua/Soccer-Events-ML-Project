@@ -5,7 +5,7 @@ from remote_data_handlers.remote_match_data import RemoteMatchData
 from nn_models.player_classifier import PlayerClassifier
 from nn_models.heatmap_classifier import HeatmapClassifier
 from nn_models.heatmap_autoencoder import HeatmapAutoencoder
-from nn_models.utils import apply_model_to_match
+from nn_models.utils import apply_model_to_match, match_data_to_model_input
 from formation_inference import get_best_formation
 from passing_networks import NxPassingNetworks as NxUtils
 
@@ -341,6 +341,24 @@ def plot_match_pyplot(current_match: RemoteMatchData, position_model: PlayerClas
 
     plt.title(title)
     return fig
+
+def get_heatmap_reconstructions(current_match: RemoteMatchData, autoencoder: HeatmapAutoencoder):
+    """
+    Applies autoencoder to player event heatmaps to create reconstructed heatmaps
+    params:
+        current_match: a RemoteMatchData (or compatible type like MatchData) storing data for the desired match
+        autoencoder: a HeatmapAutoencoder model taking in (*, 1, 50, 50) or (1, 50, 50) tensors
+    """
+    # get events map
+    team1_input, team2_input = match_data_to_model_input(current_match)
+    team1_hm = team1_input[0]
+    team2_hm = team2_input[0]
+
+    # get heatmaps
+    team1_reconstructed_hm = autoencoder(team1_hm).detach()
+    team2_reconstructed_hm = autoencoder(team2_hm).detach()
+
+    return team1_reconstructed_hm, team2_reconstructed_hm
 
 #----------------Plotly----------------
 def process_hover_text(d: dict):
