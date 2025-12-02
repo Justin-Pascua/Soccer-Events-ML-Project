@@ -7,8 +7,8 @@ from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import plotly.express as px
 
-from local_data_handlers.espn_data_handler import espn_label_decoder, formation_decoder
-from local_data_handlers.wyscout_metadata_handler import wyscout_label_decoder
+from internal_data_handlers.espn_data_handler import espn_label_decoder, formation_decoder
+from internal_data_handlers.wyscout_metadata_handler import wyscout_label_decoder
 
 def plot_embeddings_2d(embedding_history: list):
     """

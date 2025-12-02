@@ -12,8 +12,8 @@ from torcheval.metrics import MulticlassF1Score
 import os
 os.environ['TORCH'] = torch.__version__
 
-from local_data_handlers.wyscout_metadata_handler import wyscout_class_labels
-from local_data_handlers.espn_data_handler import final_espn_class_labels
+from internal_data_handlers.wyscout_metadata_handler import wyscout_class_labels
+from internal_data_handlers.espn_data_handler import final_espn_class_labels
 
 
 def _plot_training_progress(history: dict, fig, axes, row_num: int):

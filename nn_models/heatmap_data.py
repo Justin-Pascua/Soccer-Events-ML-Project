@@ -13,10 +13,10 @@ from scipy import sparse
 import os
 os.environ['TORCH'] = torch.__version__
 
-from local_data_handlers.wyscout_metadata_handler import get_players_maps, wyscout_label_encoder
-from local_data_handlers.wyscout_data_handler import get_full_events_df
+from internal_data_handlers.wyscout_metadata_handler import get_players_maps, wyscout_label_encoder
+from internal_data_handlers.wyscout_data_handler import get_full_events_df
 
-from local_data_handlers.espn_data_handler import get_processed_player_match_positions, espn_label_encoder
+from internal_data_handlers.espn_data_handler import get_processed_player_match_positions, espn_label_encoder
 
 # X and y transforms
 class CustomTransforms:
