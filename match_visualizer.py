@@ -580,9 +580,7 @@ def plot_match_plotly(current_match: RemoteMatchData, position_model: PlayerClas
                         width = 800,
                         showlegend = False,
                         title = dict(
-                            text = title,
-                            x = 0.5,
-                            y = 0.97
+                            text = title
                         )
                     ))
 
