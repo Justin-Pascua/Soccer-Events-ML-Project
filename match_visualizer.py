@@ -385,15 +385,15 @@ def add_soccer_pitch_plotly(fig: go.Figure):
         fig: a go.Figure object
     """
     # Set background color (entire figure area)
-    fig.update_layout(plot_bgcolor = 'green')
+    fig.update_layout(plot_bgcolor = 'rgba(0,0,0,0)')
     
     # Fill the pitch area with green
     fig.add_shape(
         type = "rect",
         x0 = -1, y0 = -1,
         x1 = 101, y1 = 101,
-        line = dict(color = 'green', width = 0),
-        fillcolor = 'green',
+        line = dict(color = 'rgba(0,0,0,0)', width = 0),
+        fillcolor = 'rgba(0,0,0,0)',
         layer = 'below'
     )
     
@@ -562,7 +562,7 @@ def add_node_trace(fig: go.Figure, G: nx.DiGraph, team_top_labels: dict, team_to
         textposition = 'top center',
         textfont = dict(
             size = 12,
-            color = 'black'
+            color = 'white'
         ),
         marker = dict(
             size = 10,
