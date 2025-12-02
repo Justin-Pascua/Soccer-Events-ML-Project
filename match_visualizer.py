@@ -1,5 +1,5 @@
-from local_data_handlers.wyscout_metadata_handler import get_players_maps, get_teams_map
-from local_data_handlers.espn_data_handler import espn_label_decoder
+from internal_data_handlers.wyscout_metadata_handler import get_players_maps, get_teams_map
+from internal_data_handlers.espn_data_handler import espn_label_decoder
 from remote_data_handlers.remote_match_data import RemoteMatchData
 
 from nn_models.player_classifier import PlayerClassifier
@@ -214,7 +214,9 @@ def get_forward_graph_pos(forward_roles: pd.DataFrame, pos: dict, wide_exists: b
         
     center_players = forward_roles[forward_roles['predictedPosition'] == 'CF']
     for i, player_id in enumerate(center_players['wyId']):
-        pos[player_id] = (FORWARD_VERTICAL, center_x_positions[i])
+        delta = 4*(-1)**i if len(forward_roles) == 3 else 0
+        pos[player_id] = (FORWARD_VERTICAL + delta, center_x_positions[i])
+
 
 def assignments_to_graph_pos(team_roles: pd.DataFrame, formation: tuple):
     """
@@ -513,8 +515,8 @@ def add_edge_trace(fig: go.Figure, G: nx.DiGraph):
         x0, y0 = G.nodes[source]['pos']
         x1, y1 = G.nodes[target]['pos']
 
-        x_mid = x0 + 0.7*(x1 - x0)
-        y_mid = y0 + 0.7*(y1 - y0)
+        x_mid = x0 + 0.6*(x1 - x0)
+        y_mid = y0 + 0.6*(y1 - y0)
 
         # each line is split near middle, 
         # so that hover text is triggered in middle of line, and not hidden by node

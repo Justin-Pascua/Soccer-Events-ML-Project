@@ -1,5 +1,5 @@
-from local_data_handlers.wyscout_metadata_handler import get_metadata_maps 
-from local_data_handlers.wyscout_data_handler import CompetitionClient, MatchData
+from internal_data_handlers.wyscout_metadata_handler import get_metadata_maps 
+from internal_data_handlers.wyscout_data_handler import CompetitionClient, MatchData
 import networkx as nx
 import numpy as np
 import pandas as pd
