@@ -14,7 +14,6 @@ from pymongo import MongoClient
 import matplotlib.pyplot as plt
 import plotly.express as px
 import torch
-import time
 
 #-------------------DATA CACHING-------------------
 # connect to MongoDB

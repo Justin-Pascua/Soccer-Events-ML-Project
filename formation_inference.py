@@ -1,7 +1,5 @@
 import itertools
 import torch
-import math
-
 
 GK_COL = 0
 LB_COL, CB_COL, RB_COL = 1, 2, 3

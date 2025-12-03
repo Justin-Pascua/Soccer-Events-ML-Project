@@ -12,7 +12,6 @@ import torch
 import networkx as nx
 import numpy as np
 import pandas as pd
-import ast
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse

@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import time
 import torch
-from torch_geometric.data import Data
 import math
 
 from nn_models.heatmap_data import CustomTransforms, CustomData
