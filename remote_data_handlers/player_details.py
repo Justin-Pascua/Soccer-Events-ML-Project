@@ -5,6 +5,8 @@ from nn_models.player_classifier import PlayerClassifier
 from remote_data_handlers.remote_match_data import RemoteMatchData
 from remote_data_handlers.metadata_handler import get_eventids_map
 
+import torch
+
 events_map, _ = get_eventids_map(verbose = False)
 final_espn_class_labels = ['GK', 
                            'LB', 'CB', 'RB', 
@@ -17,7 +19,9 @@ class PlayerDetails():
     def __init__(self, current_match: RemoteMatchData, 
                  hm_model: HeatmapClassifier | PlayerClassifier, 
                  hm_ae: HeatmapAutoencoder):
-        team1_input, team2_input = match_data_to_model_input(current_match)
+        
+        self.team1_players = current_match.team1_players
+        self.team2_players = current_match.team2_players
 
         # player position predictions
         team1_prob, team2_prob = apply_model_to_match(hm_model, current_match)
@@ -26,6 +30,7 @@ class PlayerDetails():
         self.probs_dict = team1_prob_dict | team2_prob_dict
 
         # event dot maps
+        team1_input, team2_input = match_data_to_model_input(current_match)
         team1_event_dots = team1_input[0]
         team2_event_dots = team2_input[0]
         team1_event_dots_dict = dict(zip(current_match.team1_players, team1_event_dots))
@@ -54,13 +59,19 @@ class PlayerDetails():
         
     def get_event_dots(self, player_wyid: int):
         try:
-            return self.event_dots_dict[player_wyid].squeeze()
+            player_event_dots = self.event_dots_dict[player_wyid].squeeze()
+            if player_wyid in self.team2_players:
+                player_event_dots = torch.flip(player_event_dots, dims = [0, 1])
+            return player_event_dots
         except Exception as e:
             raise e
         
     def get_heatmap(self, player_wyid: int):
         try:
-            return self.hm_dict[player_wyid].squeeze()
+            player_hm = self.hm_dict[player_wyid].squeeze()
+            if player_wyid in self.team2_players:
+                player_hm = torch.flip(player_hm, dims = [0, 1])
+            return player_hm
         except Exception as e:
             raise e
         

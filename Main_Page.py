@@ -136,7 +136,7 @@ def league_prompt():
 
     # prompt user for competition
     selected_comp = st.selectbox('Select competition', external_comp_names,
-                                    on_change = reset_user_input)
+                                 on_change = reset_user_input,)
     selected_comp = external_to_internal_comp[selected_comp]
     
     st.session_state.selected_comp = selected_comp
@@ -182,7 +182,8 @@ def match_prompt_domestic():
     selected_match = st.selectbox('Select specific match',
                                   available_matches, 
                                   disabled = (st.session_state['selected_team1'] is None or 
-                                              st.session_state['selected_team2'] is None))
+                                              st.session_state['selected_team2'] is None),
+                                  help = 'Select from one of two matches played between the two teams')
     
     # get wyid of match
     if selected_match:
@@ -198,7 +199,8 @@ def match_prompt_international():
 
     selected_match = st.selectbox('Select specific match',
                                   available_matches,
-                                  disabled = (st.session_state['selected_comp'] is None))
+                                  disabled = (st.session_state['selected_comp'] is None),
+                                  help = 'Select a specific match from the tournament')
     if selected_match:
         mask2 = all_matches['externalName'] == selected_match
         match_wyid = all_matches[mask2]['wyId'].item()
@@ -312,7 +314,7 @@ def player_output():
            
 
 def main_display():
-    input_col, match_output_col, player_output_col = st.columns([1, 2, 1])
+    input_col, match_output_col, player_output_col = st.columns([1, 2.5, 1])
     match_input_cell = input_col.container(
         border = True, 
         height = 'content', 
@@ -354,7 +356,7 @@ def main_display():
             if st.session_state['selected_team1'] is not None and st.session_state['selected_team2'] is not None:
                 match_prompt(mode = 'domestic')
 
-        apply = st.button('Apply', 
+        apply = st.button('Apply Selection', 
                       on_click = get_match_data,
                       args = (st.session_state['selected_comp'],
                               st.session_state['selected_match'],
@@ -374,7 +376,8 @@ def main_display():
 
 #-------------------EXECUTION-------------------
 st.set_page_config(
-    layout = 'wide'
+    layout = 'wide',
+    initial_sidebar_state = 'collapsed',
 )
 st.title("Soccer Match Visualizer")
 data_initialization()
