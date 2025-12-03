@@ -385,6 +385,10 @@ st.set_page_config(
     layout = 'wide',
     initial_sidebar_state = 'collapsed',
 )
+with st.sidebar:
+    st.markdown(""":material/attribution: :grey[Justin Pascua - 2025]  
+                :material/work: :grey[[LinkedIn](https://www.linkedin.com/in/justin-pascua-673686187/)]  
+                :material/code: :grey[[GitHub](https://github.com/Justin-Pascua)]""")
 st.title("Soccer Match Visualizer")
 data_initialization()
 main_display()

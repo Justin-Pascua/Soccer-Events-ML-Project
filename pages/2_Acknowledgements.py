@@ -1,5 +1,10 @@
 import streamlit as st
 
+with st.sidebar:
+    st.markdown(""":material/attribution: :grey[Justin Pascua - 2025]  
+                :material/work: :grey[[LinkedIn](https://www.linkedin.com/in/justin-pascua-673686187/)]  
+                :material/code: :grey[[GitHub](https://github.com/Justin-Pascua)]""")
+
 st.title(':material/school: Acknowledgements')
 st.header("Raw match data")
 st.write("""Citation: Pappalardo, Luca; Massucco, Emanuele (2019). Soccer match event dataset. figshare. Collection. https://doi.org/10.6084/m9.figshare.c.4415000.v5""")
