@@ -515,21 +515,24 @@ def add_edge_trace(fig: go.Figure, G: nx.DiGraph):
         x0, y0 = G.nodes[source]['pos']
         x1, y1 = G.nodes[target]['pos']
 
-        x_mid = x0 + 0.6*(x1 - x0)
-        y_mid = y0 + 0.6*(y1 - y0)
+        offset_factor = 0.025  # Adjust for more/less curvature
+        x_mid = (x0 + x1)/ 2 + offset_factor * (y1 - y0)  # Perpendicular offset
+        y_mid = (y0 + y1)/ 2 + offset_factor * (x0 - x1)  # Perpendicular offset
 
         # each line is split near middle, 
         # so that hover text is triggered in middle of line, and not hidden by node
-        edge_trace_first = go.Scatter(
-            x = [x0, x_mid, x_mid, x1], y = [y0, y_mid, y_mid, y1],
+        edge_trace = go.Scatter(
+            x = [x0, x_mid, x1], y = [y0, y_mid, y1],
             hoverinfo = 'text',
             hovertext = f'Passes from {source_name} to {target_name}: {num_passes}',
             mode = 'lines',
-            line = dict(color = 'yellow'), 
+            line_shape = 'spline',
+            line_smoothing = 1.3,
+            line = dict(color = '#ffbd66'), 
             opacity = weight,
         )
         
-        fig.add_traces([edge_trace_first])
+        fig.add_traces([edge_trace])
 
 def add_node_trace(fig: go.Figure, G: nx.DiGraph, team_top_labels: dict, team_top_probs: dict):
     """
@@ -568,8 +571,8 @@ def add_node_trace(fig: go.Figure, G: nx.DiGraph, team_top_labels: dict, team_to
         ),
         marker = dict(
             size = 10,
-            color = 'lightblue',
-            line = dict(width = 2, color = 'darkblue')
+            color = "#7718bf",
+            line = dict(width = 2, color = '#460773')
         )
     )
     fig.add_trace(node_trace)

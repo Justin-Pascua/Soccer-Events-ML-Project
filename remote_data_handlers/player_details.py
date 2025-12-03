@@ -56,7 +56,7 @@ class PlayerDetails():
             return dict(zip(final_espn_class_labels, probabilities))
         except Exception as e:
             print(self.label)
-            print(e)
+            raise(e)
         
     def get_event_dots(self, player_wyid: int):
         try:
@@ -66,7 +66,7 @@ class PlayerDetails():
             return player_event_dots
         except Exception as e:
             print(self.label)
-            print(e)
+            raise(e)
         
     def get_heatmap(self, player_wyid: int):
         try:
@@ -76,7 +76,7 @@ class PlayerDetails():
             return player_hm
         except Exception as e:
             print(self.label)
-            print(e)
+            raise(e)
         
     def get_event_counts(self, player_wyid: int):
         selected_player_events = self.events_df[self.events_df['playerId'] == player_wyid]

@@ -21,6 +21,5 @@ st.markdown("""Lastly, I would be remiss to not mention my source of inspiration
             which discusses soccer from the perspective of network theory using the dataset mentioned 
             at the top of this page. Having taken a class in network theory, and being a lifelong 
             soccer fan, this video compelled me to explore the dataset for myself. Doing so, I eventually
-            developed this project, which you're interacting with now.  
-            So, thank you to YouTuber "Not David" for putting together a well-crafted video.
+            developed this project, which you're interacting with now. So, thank you to YouTuber "Not David" for putting together a well-crafted video.
             """)
