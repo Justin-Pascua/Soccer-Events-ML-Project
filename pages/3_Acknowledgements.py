@@ -1,6 +1,6 @@
 import streamlit as st
 
-st.title('Acknowledgements')
+st.title(':material/school: Acknowledgements')
 st.header("Raw match data")
 st.write("""Citation: Pappalardo, Luca; Massucco, Emanuele (2019). Soccer match event dataset. figshare. Collection. https://doi.org/10.6084/m9.figshare.c.4415000.v5""")
 st.markdown("""Details: This dataset contains data on all events occuring in domestic 
@@ -10,7 +10,7 @@ st.markdown("""Details: This dataset contains data on all events occuring in dom
             Luca Pappalardo and Emanuele Massucco""")
 
 st.header("Position label data")
-st.markdown("""The above dataset was complimented by data from ESPN. I used the  
+st.markdown("""The above dataset was complimented by data from ESPN. I used the 
             `soccerdata` package to scrape ESPN's soccer data to obtain the exact 
             match-specific position label for each player. The package documentation can 
             be found here: https://soccerdata.readthedocs.io/en/latest/.""")

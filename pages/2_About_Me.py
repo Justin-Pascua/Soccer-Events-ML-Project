@@ -1,6 +1,6 @@
 import streamlit as st
 
-st.title("About Me")
+st.title(":material/person_add: About Me")
 st.link_button(
     "LinkedIn",
     url = "https://www.linkedin.com/in/justin-pascua-673686187/",

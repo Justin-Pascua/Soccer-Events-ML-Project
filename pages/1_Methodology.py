@@ -1,7 +1,7 @@
 import streamlit as st
 
-st.title("Methodology")
-st.write("UNDER CONSTRUCTION")
+st.title(":material/lightbulb: Methodology")
+st.markdown(":material/construction: UNDER CONSTRUCTION :material/construction:")
 # discuss...
 # format of raw events_df 
 # events_df -> heatmaps
