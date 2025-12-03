@@ -1,5 +1,4 @@
-from internal_data_handlers.wyscout_metadata_handler import get_players_maps, get_teams_map
-from internal_data_handlers.espn_data_handler import espn_label_decoder
+from remote_data_handlers.metadata_handler import get_players_maps, get_teams_map, espn_label_decoder
 from remote_data_handlers.remote_match_data import RemoteMatchData
 
 from nn_models.player_classifier import PlayerClassifier
@@ -7,7 +6,7 @@ from nn_models.heatmap_classifier import HeatmapClassifier
 from nn_models.heatmap_autoencoder import HeatmapAutoencoder
 from nn_models.utils import apply_model_to_match, match_data_to_model_input
 from formation_inference import get_best_formation
-from passing_networks import NxPassingNetworks as NxUtils
+from passing_networks import generate_nx_graph_from_match, add_normalized_edge_weights
 
 import torch
 import networkx as nx
@@ -211,7 +210,7 @@ def get_forward_graph_pos(forward_roles: pd.DataFrame, pos: dict, wide_exists: b
     if num_forwards == 1:
         center_x_positions = [MIDDLE_HORIZONTAL]
     else:
-        center_x_positions = [MIDDLE_HORIZONTAL - 15, MIDDLE_HORIZONTAL + 15]
+        center_x_positions = [MIDDLE_HORIZONTAL - 12, MIDDLE_HORIZONTAL + 12]
         
     center_players = forward_roles[forward_roles['predictedPosition'] == 'CF']
     for i, player_id in enumerate(center_players['wyId']):
@@ -353,7 +352,7 @@ def plot_match_pyplot(current_match: RemoteMatchData, position_model: PlayerClas
     fig, ax = plt.subplots(figsize = (12, 7))
     plot_pitch_pyplot(ax)
 
-    team1_g, team2_g = NxUtils.generate_nx_graph_from_match(current_match)
+    team1_g, team2_g = generate_nx_graph_from_match(current_match)
 
     draw_passing_network(team1_g, pos_team1)
     draw_passing_network(team2_g, pos_team2)
@@ -595,11 +594,11 @@ def plot_match_plotly(current_match: RemoteMatchData, position_model: PlayerClas
     pos_team2 = {player: reflect_single_pos(coords) for player, coords in pos_team2.items()}
 
     # create nx graphs
-    team1_g, team2_g = NxUtils.generate_nx_graph_from_match(current_match)
+    team1_g, team2_g = generate_nx_graph_from_match(current_match)
     nx.set_node_attributes(team1_g, pos_team1, 'pos')
     nx.set_node_attributes(team2_g, pos_team2, 'pos')
-    NxUtils.add_normalized_edge_weights(team1_g)
-    NxUtils.add_normalized_edge_weights(team2_g)
+    add_normalized_edge_weights(team1_g)
+    add_normalized_edge_weights(team2_g)
 
     # get topk predictions for node hover text
     team1_top_labels = dict(zip(current_match.team1_players, 

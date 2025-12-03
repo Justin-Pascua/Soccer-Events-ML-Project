@@ -4,8 +4,9 @@ from remote_data_handlers.metadata_handler import get_players_maps, get_teams_ma
 from nn_models.player_classifier import PlayerClassifier
 from nn_models.heatmap_classifier import HeatmapClassifier
 from nn_models.heatmap_autoencoder import HeatmapAutoencoder
-from match_visualizer import plot_match_plotly, plot_match_pyplot, get_heatmap_reconstructions
 from nn_models.utils import match_data_to_model_input, apply_model_to_match
+from match_visualizer import plot_match_plotly, plot_match_pyplot, get_heatmap_reconstructions
+
 
 import streamlit as st
 import pandas as pd
@@ -208,7 +209,7 @@ def match_output():
         st.write('Awaiting match selection')
         return
     
-    st.title("Passing Networks")
+    st.header("Passing Networks")
     current_match = st.session_state['match_data']
     hm_model = st.session_state.models['hm_model']
     st.plotly_chart(plot_match_plotly(current_match, hm_model),
@@ -282,7 +283,7 @@ def player_output():
         st.caption("""Note that the position occupied by the player within the plot in 
                    the center of your screen may differ from the position with the 
                    highest probability. For more details about how positions are decided, 
-                   please refer to the "About" page. """)
+                   please refer to the "Methodology" page. """)
     with event_counts_tab:
         event_counts = player_details.get_event_counts(player_wyid)
         st.dataframe(event_counts)
@@ -304,7 +305,7 @@ def player_output():
         player_hm = player_details.get_heatmap(player_wyid)
         fig = plot_arr(player_hm)
         st.plotly_chart(fig)
-        st.caption("""Above is a reconstruction of the player's heatmap generated
+        st.caption("""This is a reconstruction of the player's heatmap generated
                    by feeding the events map in the previous tab into an autoencoder. """)
         st.caption("""As noted in the previous tab, we've oriented this heatmap in order to
                    match the orientation of the pitch in the center of the screen.""")
@@ -375,5 +376,6 @@ def main_display():
 st.set_page_config(
     layout = 'wide'
 )
+st.title("Soccer Match Visualizer")
 data_initialization()
 main_display()

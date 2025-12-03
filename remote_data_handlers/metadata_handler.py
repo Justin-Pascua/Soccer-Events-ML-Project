@@ -6,6 +6,16 @@ warnings.filterwarnings('ignore')
 
 ROOT = Path('match_metadata')
 
+final_espn_class_labels = ['GK', 
+                           'LB', 'CB', 'RB', 
+                           # 'CDM', 
+                           'LM', 'CM', 'RM', 
+                           # 'CAM', 
+                           'LW', 'CF', 'RW']
+
+espn_label_encoder = {pos: i for i, pos in enumerate(final_espn_class_labels)}
+espn_label_decoder = {i: pos for i, pos in enumerate(final_espn_class_labels)}
+
 # Dataframe methods
 def get_metadata_dfs(verbose: bool = True):
     """
