@@ -72,7 +72,9 @@ def reset_user_input():
     st.session_state['selected_team1'] = None
     st.session_state['selected_team2'] = None
     st.session_state['selected_match'] = None
+    st.session_state['match_data'] = None
     st.session_state['selected_player'] = None
+    st.session_state['player_details'] = None
 
 #-------------------UTILS-------------------
 def generate_abbreviation(full_team_name: str):
@@ -268,7 +270,12 @@ def player_output():
         probs_df = pd.DataFrame(data = [position_probabilities.keys(), 
                                         position_probabilities.values()]
                                 ).transpose()
-        fig = px.bar(probs_df, x = 1, y  = 0, orientation = 'h', height = 250, width = 100)
+        fig = px.bar(probs_df, x = 1, y  = 0, 
+                     orientation = 'h', 
+                     height = 250, 
+                     width = 100,
+                     color_discrete_sequence = ['#8A2BE2']
+                     )
         fig.update_layout(
             plot_bgcolor = 'rgba(0,0,0,0)',
             paper_bgcolor = 'rgba(0,0,0,0)',
@@ -312,7 +319,6 @@ def player_output():
         st.caption("""As noted in the previous tab, we've oriented this heatmap in order to
                    match the orientation of the pitch in the center of the screen.""")
            
-
 def main_display():
     input_col, match_output_col, player_output_col = st.columns([1, 2.5, 1])
     match_input_cell = input_col.container(

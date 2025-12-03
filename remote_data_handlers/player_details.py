@@ -19,7 +19,7 @@ class PlayerDetails():
     def __init__(self, current_match: RemoteMatchData, 
                  hm_model: HeatmapClassifier | PlayerClassifier, 
                  hm_ae: HeatmapAutoencoder):
-        
+        self.label = current_match.details['label']
         self.team1_players = current_match.team1_players
         self.team2_players = current_match.team2_players
 
@@ -55,7 +55,8 @@ class PlayerDetails():
             probabilities = self.probs_dict[player_wyid].tolist()
             return dict(zip(final_espn_class_labels, probabilities))
         except Exception as e:
-            raise e
+            print(self.label)
+            print(e)
         
     def get_event_dots(self, player_wyid: int):
         try:
@@ -64,7 +65,8 @@ class PlayerDetails():
                 player_event_dots = torch.flip(player_event_dots, dims = [0, 1])
             return player_event_dots
         except Exception as e:
-            raise e
+            print(self.label)
+            print(e)
         
     def get_heatmap(self, player_wyid: int):
         try:
@@ -73,7 +75,8 @@ class PlayerDetails():
                 player_hm = torch.flip(player_hm, dims = [0, 1])
             return player_hm
         except Exception as e:
-            raise e
+            print(self.label)
+            print(e)
         
     def get_event_counts(self, player_wyid: int):
         selected_player_events = self.events_df[self.events_df['playerId'] == player_wyid]
