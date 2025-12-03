@@ -4,5 +4,4 @@
 __pycache__
 .venv/
 demo.ipynb
-model_weights/
 .streamlit/secrets.toml
