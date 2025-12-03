@@ -84,59 +84,23 @@ def generate_abbreviation(full_team_name: str):
     else:
         return full_team_name[:3].upper()
 
-def get_player_output():
-    current_match: RemoteMatchData = st.session_state['match_data']
-    hm_ae = st.session_state['models']['hm_ae']
-    player_wyid = st.session_state['selected_player']
-    events_map = st.session_state['events_map']
-    
-    # get event counts
-    events_df = current_match.events_df
-    events_df = events_df[~events_df['eventId'].isin([5,6,7])]
-    events_df['event'] = events_df['eventId'].map(events_map)
-    selected_player_events = events_df[events_df['playerId'] == player_wyid]
-    event_counts = selected_player_events['event'].value_counts()
-    
-    # get event dots map
-    team1_input, team2_input = match_data_to_model_input(current_match)
-    team1_event_dots = team1_input[0]
-    team2_event_dots = team2_input[0]
-    player_event_dots = None
-
-    # get heatmaps
-    team1_hm, team2_hm = get_heatmap_reconstructions(current_match, hm_ae)
-    player_hm = None
-    try:
-        relative_index = current_match.team1_players.index(player_wyid)
-        player_event_dots = team1_event_dots[relative_index].squeeze()
-        player_hm = team1_hm[relative_index].squeeze()
-    except:
-        relative_index = current_match.team2_players.index(player_wyid)
-        player_event_dots = team2_event_dots[relative_index].squeeze()
-        player_hm = team2_hm[relative_index].squeeze()
-
-        # flip to match orientation of match plot
-        player_event_dots = torch.flip(player_event_dots, dims = [0, 1])
-        player_hm = torch.flip(player_hm, dims = [0, 1])
-
-    return event_counts, player_event_dots, player_hm
-
 def plot_arr(arr):
     fig = px.imshow(
         arr,
         zmax = torch.quantile(arr, 0.95).item()*2.75,
-        color_continuous_scale = 'thermal'
+        color_continuous_scale = 'thermal',
+        height = 250,
+        width = 250,
     )
     fig.update_traces(hoverinfo = 'skip', hovertemplate = None)
-    fig.update_layout(coloraxis_showscale = False)
     fig.update_layout(
+        coloraxis_showscale = False,
         margin = dict(l = 0, r = 0, t = 0, b = 0)
     )
     fig.update_xaxes(showticklabels = False, ticks = '')
     fig.update_yaxes(showticklabels = False, ticks = '')
 
     return fig
-
 
 #-------------------MAIN PAGE ELEMENTS-------------------
 # connect to database and load models
@@ -244,6 +208,7 @@ def match_output():
         st.write('Awaiting match selection')
         return
     
+    st.title("Passing Networks")
     current_match = st.session_state['match_data']
     hm_model = st.session_state.models['hm_model']
     st.plotly_chart(plot_match_plotly(current_match, hm_model),
@@ -300,12 +265,13 @@ def player_output():
         probs_df = pd.DataFrame(data = [position_probabilities.keys(), 
                                         position_probabilities.values()]
                                 ).transpose()
-        fig = px.bar(probs_df, x = 1, y  = 0, orientation = 'h')
+        fig = px.bar(probs_df, x = 1, y  = 0, orientation = 'h', height = 250, width = 100)
         fig.update_layout(
             plot_bgcolor = 'rgba(0,0,0,0)',
             paper_bgcolor = 'rgba(0,0,0,0)',
             yaxis_title = 'Position',
-            xaxis_title = 'Probability'
+            xaxis_title = 'Probability',
+            margin = dict(l = 0, r = 0, t = 0, b = 0),
         )
         fig.update_xaxes(color = 'white')
         fig.update_yaxes(color = 'white')
@@ -313,6 +279,10 @@ def player_output():
         st.caption("""The player's postion is predicted by feeding a map of their 
                    in-match actions through a neural network. The input fed into the
                    neural network can be found in the "Events Map" tab.""")
+        st.caption("""Note that the position occupied by the player within the plot in 
+                   the center of your screen may differ from the position with the 
+                   highest probability. For more details about how positions are decided, 
+                   please refer to the "About" page. """)
     with event_counts_tab:
         event_counts = player_details.get_event_counts(player_wyid)
         st.dataframe(event_counts)
@@ -323,7 +293,8 @@ def player_output():
         fig = plot_arr(event_dots)
         st.plotly_chart(fig)
         st.caption("""Above is a map showing where the given player committed events on 
-                   the pitch. Here, we've adjusted the orientation of the map to match the 
+                   the pitch.""")
+        st.caption("""Here, we've adjusted the orientation of the map to match the 
                    orientation of the pitch in the center of your screen. In other 
                    words, players for the team on the right-hand side have had their maps 
                    rotated by 180 degrees about the center of the pitch. Internally, when 
@@ -334,8 +305,8 @@ def player_output():
         fig = plot_arr(player_hm)
         st.plotly_chart(fig)
         st.caption("""Above is a reconstruction of the player's heatmap generated
-                   by feeding the events map in the previous tab into an autoencoder. 
-                   As noted in the previous tab, we've oriented this heatmap in order to
+                   by feeding the events map in the previous tab into an autoencoder. """)
+        st.caption("""As noted in the previous tab, we've oriented this heatmap in order to
                    match the orientation of the pitch in the center of the screen.""")
            
 

@@ -565,7 +565,7 @@ def add_node_trace(fig: go.Figure, G: nx.DiGraph, team_top_labels: dict, team_to
         textposition = 'top center',
         textfont = dict(
             size = 12,
-            color = 'white'
+            color = 'white',
         ),
         marker = dict(
             size = 10,
