@@ -6,4 +6,3 @@ __pycache__
 demo.ipynb
 model_weights/
 .streamlit/secrets.toml
-match_metadata/
