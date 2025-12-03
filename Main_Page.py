@@ -320,7 +320,7 @@ def player_output():
                    match the orientation of the pitch in the center of the screen.""")
            
 def main_display():
-    input_col, match_output_col, player_output_col = st.columns([1, 2.5, 1])
+    input_col, match_output_col, player_output_col = st.columns([1, 2.5, 1.2])
     match_input_cell = input_col.container(
         border = True, 
         height = 'content', 
