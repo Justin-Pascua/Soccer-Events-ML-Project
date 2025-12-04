@@ -373,7 +373,7 @@ def process_hover_text(d: dict):
     temp_copy = d.copy()
     prob_sum = sum(temp_copy.values())
     temp_copy['Other'] = np.round(1 - prob_sum, 2)
-    output_str = 'Prediction confidence: <br>'
+    output_str = 'Prediction positions: <br>'
     for key, value in temp_copy.items():
         if value > 0:
             output_str += f'{key}: {value} <br>'

@@ -396,6 +396,6 @@ with st.sidebar:
     st.markdown(""":material/attribution: :grey[Justin Pascua - 2025]  
                 :material/work: :grey[[LinkedIn](https://www.linkedin.com/in/justin-pascua-673686187/)]  
                 :material/code: :grey[[GitHub](https://github.com/Justin-Pascua)]""")
-st.title("Soccer Match Visualizer")
+st.title(":material/sports_soccer: Soccer Match Visualizer")
 data_initialization()
 main_display()
