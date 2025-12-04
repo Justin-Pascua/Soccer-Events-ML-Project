@@ -118,7 +118,7 @@ def generate_match_title(current_match: RemoteMatchData):
     second_score = scores.split(' - ')[1]
 
     title = f"{first_team} ({first_score}) - ({second_score}) {second_team} ({current_match.details['dateutc'].split(' ')[0]})"
-    title = title.encode().decode('unicode_escape')
+    title = title.encode('unicode_escape').decode('unicode_escape')
     return title
 
 def get_roles_df(model_output: torch.Tensor, player_wyids: list, get_formation: bool = False):

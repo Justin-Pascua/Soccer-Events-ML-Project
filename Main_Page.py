@@ -34,6 +34,12 @@ def get_match_data(league_string, match_wyid, _client):
     match_data = RemoteMatchData(league_string, match_wyid, _client)
     st.session_state['match_data'] = match_data
 
+    player_details = PlayerDetails(match_data, 
+                                   st.session_state['models']['hm_model'],
+                                   st.session_state['models']['hm_ae'])
+    st.session_state['player_details'] = player_details
+
+
 # get metadata
 @st.cache_data(ttl = 60, show_spinner = 'Importing league, team, player, and event names...')
 def get_metadata():
@@ -251,11 +257,6 @@ def player_output():
     if st.session_state['selected_player'] is None:
         st.write('Awaiting player selection')
         return    
-    if st.session_state['player_details'] is None:
-        current_match = st.session_state['match_data']
-        hm_model = st.session_state['models']['hm_model']
-        hm_ae = st.session_state['models']['hm_ae']
-        st.session_state['player_details'] = PlayerDetails(current_match, hm_model, hm_ae)
     
     player_wyid = st.session_state['selected_player']
     player_details: PlayerDetails = st.session_state['player_details']
@@ -375,6 +376,8 @@ def main_display():
 
     with match_output_cell:
         match_output()
+        # st.write(st.session_state['match_data'].details['label'])
+        # st.write(st.session_state['player_details'].label)
 
     with player_output_cell:
         player_output()

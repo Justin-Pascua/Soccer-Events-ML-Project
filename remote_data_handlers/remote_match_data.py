@@ -24,7 +24,7 @@ class RemoteMatchData:
         self.details = {
             'date': unprocessed_details['date'],
             'dateutc': unprocessed_details['dateutc'],
-            'label': unprocessed_details['label'],
+            'label': unprocessed_details['label'].encode().decode('unicode_escape'),
             'winner': unprocessed_details['winner']
         }
 
