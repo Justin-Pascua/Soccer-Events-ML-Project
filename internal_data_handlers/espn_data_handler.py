@@ -85,9 +85,7 @@ class NameResolver:
         'AC Milan': 'Milan', 
         'AS Roma': 'Roma', 
         'Chievo Verona': 'Chievo'
-    }
-
-    wyscout_match_label_to_wyid = get_match_mapper(invert = True)    
+    }  
 
     @staticmethod
     def pos_label_consolidater(original_label: str):
@@ -108,19 +106,6 @@ class NameResolver:
             return NameResolver.espn_to_wyscout_team_dict[espn_name]
         except: # if not mismatched, then return argument since name is same between espn and wyscout
             return espn_name
-
-    @staticmethod
-    def consolidate_match_wyid(label1: str, label2: str):
-        """
-        Maps wyscout match label to wyscout match id
-        """
-        try:
-            return NameResolver.wyscout_match_label_to_wyid[label1]
-        except KeyError:
-            try:
-                return NameResolver.wyscout_match_label_to_wyid[label2]
-            except:
-                return None
 
     @staticmethod
     def get_short_name(full_name: str):
@@ -231,7 +216,20 @@ def get_processed_player_match_positions(drop: bool = True):
     raw_espn_df['teamWyId'] = raw_espn_df['team'].map(inverse_teams_map).astype('Int64')
 
     # get match wyid's
-    raw_espn_df['matchWyId'] = raw_espn_df.apply(lambda row: NameResolver.consolidate_match_wyid(row['label1'], row['label2']), axis = 1).astype('Int64')
+    wyscout_match_label_to_wyid = get_match_mapper(invert = True) 
+    def consolidate_match_wyid(label1: str, label2: str):
+        """
+        Maps wyscout match label to wyscout match id
+        """
+        try:
+            return wyscout_match_label_to_wyid[label1]
+        except KeyError:
+            try:
+                return wyscout_match_label_to_wyid[label2]
+            except:
+                return None
+            
+    raw_espn_df['matchWyId'] = raw_espn_df.apply(lambda row: consolidate_match_wyid(row['label1'], row['label2']), axis = 1).astype('Int64')
     raw_espn_df.dropna(subset = 'matchWyId', inplace = True)
 
     # standardize player names for better matching

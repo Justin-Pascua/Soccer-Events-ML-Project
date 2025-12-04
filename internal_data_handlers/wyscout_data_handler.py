@@ -11,7 +11,7 @@ from bson.objectid import ObjectId
 from datetime import datetime as dt
 from sklearn.preprocessing import LabelEncoder
 
-from .wyscout_metadata_handler import get_players_maps
+from remote_data_handlers.metadata_handler import get_players_maps
 
 # get mapping of playerId's to player positions
 _, _, player_to_pos, _ = get_players_maps(verbose = False)

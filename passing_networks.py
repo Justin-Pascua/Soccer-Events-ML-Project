@@ -1,14 +1,7 @@
-from internal_data_handlers.wyscout_metadata_handler import get_metadata_maps 
-from internal_data_handlers.wyscout_data_handler import CompetitionClient, MatchData
+from remote_data_handlers.metadata_handler import get_metadata_maps 
+from remote_data_handlers.remote_match_data import RemoteMatchData
 import networkx as nx
 import numpy as np
-import pandas as pd
-import time
-import torch
-import math
-
-from nn_models.heatmap_data import CustomTransforms, CustomData
-from nn_models.heatmap_classifier import HeatmapClassifier
 
 wyscout_metadata_maps = get_metadata_maps(verbose = False)
 player_to_short_name = wyscout_metadata_maps['player_to_short_name']
@@ -36,12 +29,12 @@ def draw_passing_network(g: nx.DiGraph, with_names: bool = True):
     nx.draw_networkx_edges(g, pos, alpha = edge_weights/edge_weights.max())
 
 
-def generate_nx_graph_from_match(match_data: MatchData):
+def generate_nx_graph_from_match(match_data: RemoteMatchData):
     """
     Generates 2 passing networks, which are weighted directed graphs, from the current match.
     Returns the two graphs as g1, g2
     params:
-        match_data: a MatchData instance
+        match_data: a RemoteMatchData instance
     """
     team1_id = match_data.team1
     team1_nodes = match_data.team1_players

@@ -10,7 +10,7 @@ import os
 os.environ['TORCH'] = torch.__version__
 
 from internal_data_handlers.wyscout_data_handler import get_full_events_df
-from internal_data_handlers.wyscout_metadata_handler import get_eventids_df
+from remote_data_handlers.metadata_handler import get_eventids_df
 
 import nn_models.heatmap_data as heatmap_data
 
