@@ -29,10 +29,15 @@ def init_connection():
     return client
 
 # get match data
-@st.cache_data(ttl = 120, show_spinner = 'Retrieving match data...')
+@st.cache_data(ttl = 300, show_spinner = 'Retrieving match data...', show_time = True)
 def get_match_data(league_string, match_wyid, _client):
-    match_data = RemoteMatchData(league_string, match_wyid, _client)
-    st.session_state['match_data'] = match_data
+    while True:
+        try:
+            match_data = RemoteMatchData(league_string, match_wyid, _client)
+            st.session_state['match_data'] = match_data
+            break
+        except:
+            continue
 
     player_details = PlayerDetails(match_data, 
                                    st.session_state['models']['hm_model'],
@@ -41,7 +46,7 @@ def get_match_data(league_string, match_wyid, _client):
 
 
 # get metadata
-@st.cache_data(ttl = 60, show_spinner = 'Importing league, team, player, and event names...')
+@st.cache_data(ttl = 600, show_spinner = 'Importing league, team, player, and event names...')
 def get_metadata():
     teams_by_league = pd.read_csv('match_metadata/teams_by_league.csv')
     
