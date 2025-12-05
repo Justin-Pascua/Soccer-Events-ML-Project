@@ -6,7 +6,7 @@ with st.sidebar:
                 :material/code: :grey[[GitHub](https://github.com/Justin-Pascua)]""")
 
 st.title(':material/school: Acknowledgements')
-st.header("Raw match data")
+st.header("Wyscout Data")
 st.write("""Citation: Pappalardo, Luca; Massucco, Emanuele (2019). Soccer match event dataset. figshare. Collection. https://doi.org/10.6084/m9.figshare.c.4415000.v5""")
 st.markdown("""Details: This dataset contains data on all events occuring in domestic 
             matches from Europe's top 5 leagues in the 2017/18 season, as well as matches 
@@ -14,7 +14,7 @@ st.markdown("""Details: This dataset contains data on all events occuring in dom
             *much more* detailed breakdown of the dataset. Much thanks to the dataset authors,
             Luca Pappalardo and Emanuele Massucco""")
 
-st.header("Position label data")
+st.header("ESPN Data")
 st.markdown("""The above dataset was complimented by data from ESPN. I used the 
             `soccerdata` package to scrape ESPN's soccer data to obtain the exact 
             match-specific position label for each player. The package documentation can 
