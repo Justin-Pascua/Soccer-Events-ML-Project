@@ -47,7 +47,7 @@ with data_tab:
              player committed the event, where on the pitch the event occurred, and 
              whether or not the event was accurate (if applicable). (Note: the original 
              dataset contains more fields, but for our purposes, this information is all 
-             we care about.""")
+             we care about.)""")
     st.write("""Per the Wyscout API documentation, the coordinates in the dataset are of the 
             form $(x, y)$, where $x$ and $y$ range over integers in the interval $[0, 100]$. 
              The pitch is oriented as follows:""")
@@ -117,9 +117,9 @@ with ml_model_tab:
     st.dataframe(coords_df)
     st.caption("List of event coordinates of each player in the France vs Argentina, World Cup 2018 match")
     
-    st.write("""Now, to restructure this data in a form suitable for a machine learning 
+    st.write(r"""Now, to restructure this data in a form suitable for a machine learning 
              model, we use each list of coordinates to create a sparse 2D array. This is 
-             done exactly how one might expect. We start with a $(100, 100)$-shaped array of 
+             done exactly how one might expect. We start with a $100 \times 100$ array of 
              zeroes. Then, for each coordinate in the coordinate list, we add a one
              to the array at the position specified by the coordinate. For example, if
              we do this for Kylian Mbappe's coordinates from the table above, we have:""")
@@ -128,15 +128,15 @@ with ml_model_tab:
     st.plotly_chart(fig1)
     st.caption("Map of Kylian Mbappe's events in the France vs Argentina, World Cup 2018 match")
     
-    st.write("""This gives us a sparse array of shape $(100, 100)$ showing us visually 
+    st.write(r"""This gives us a sparse array of shape $100 \times 100$ showing us visually 
              where on the pitch the player committed events. In order to reduce the 
              number of parameters in our ML model, and in order to improve its 
              generalizability, we apply a Gaussian blur to the array, and resize it to 
-             $(50, 50)$. This gives us images which look as follows:""")
+             $50 \times 50$. This gives us images which look as follows:""")
     
     fig2 = pio.read_json('static/EventsMap.json')
     st.plotly_chart(fig2)
-    st.caption("Kylian Mbappe's events map blurred and resized down to $(50, 50)$")
+    st.caption(r"Kylian Mbappe's events map blurred and resized down to $50 \times 50$")
 
     st.write("""This preserves the general structure of the original array while reducing
              the actual size. We then predict the player's position using a deep neural 
