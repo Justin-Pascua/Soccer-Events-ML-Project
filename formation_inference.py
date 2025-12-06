@@ -291,11 +291,11 @@ def eval_formation_score(original_probabilities: torch.Tensor, choice_matrix: to
     weights = -(2*choice_matrix - ONES)
     prod = original_probabilities*weights
 
-    # get score for each category
-    gk_score = prod[:, GK_COLS].sum()
-    df_score = prod[:, DF_COLS].sum()
-    md_score = prod[:, MD_COLS].sum()
-    fw_score = prod[:, FW_COLS].sum()
+    # # get score for each category
+    # gk_score = prod[:, GK_COLS].sum()
+    # df_score = prod[:, DF_COLS].sum()
+    # md_score = prod[:, MD_COLS].sum()
+    # fw_score = prod[:, FW_COLS].sum()
 
     # normalize by number of players in category
     # df_score /= math.sqrt(formation[0])
@@ -303,7 +303,7 @@ def eval_formation_score(original_probabilities: torch.Tensor, choice_matrix: to
     # fw_score /= math.sqrt(formation[2])
 
     # unweighted sum
-    score = gk_score + df_score + md_score + fw_score
+    score = prod.sum()
 
     return score
 
