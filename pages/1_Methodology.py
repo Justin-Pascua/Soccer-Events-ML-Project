@@ -6,10 +6,9 @@ import plotly.io as pio
 import json
 
 st.set_page_config(
-#     layout = 'wide'
+    layout = 'centered'
 )
 st.title(":material/lightbulb: Methodology")
-st.markdown(":material/construction: UNDER CONSTRUCTION :material/construction:")
 with st.sidebar:
     st.markdown(""":material/attribution: :grey[Justin Pascua - 2025]  
                 :material/work: :grey[[LinkedIn](https://www.linkedin.com/in/justin-pascua-673686187/)]  
@@ -21,12 +20,11 @@ st.write("""To visualize a match, we take raw match data (see the "Acknowledgmen
             player's position (e.g. GK, CB, LW, etc.), and each team's formation. We do 
             this using a combination of machine learning models, and non-ML algorithms. 
             In the following sections, we give a brief overview of the datasets used, 
-            how player positions and team formations are predicted, and how the passing 
-            networks are formed.""")
+            how player positions and team formations are assigned.""")
 
 tab_names = ["The Data", "Player Position Prediction", 
-             "Formation Inference", "Passing Networks"]
-data_tab, ml_model_tab, formation_inf_tab, passing_networks_tab = st.tabs(tab_names)
+             "Formation Inference"]
+data_tab, ml_model_tab, formation_inf_tab = st.tabs(tab_names)
 with data_tab:
     st.header(tab_names[0])
     st.write("""This project drew from two sources of data, which we'll refer to as 
@@ -187,19 +185,76 @@ with ml_model_tab:
 
 with formation_inf_tab:
     st.header(tab_names[2])
-    st.write("""As explained in the previous tab, in order to effectively determine a 
-             team's formation, one should consider the positioning of the entire team. 
-             To do so, we first apply the ML model described in the previous tab to each 
-             of the 11 players on the starting 11. This gives us an $(11,10)$-shaped 
-             array where the rows represent 11 players, and the columns represent the 
-             10 possible positions. For the France vs Argentina, World Cup 2018 match, 
-             this array for the French team looks as follows:""")
+    st.write(r"""As explained in the previous tab, in order to effectively determine a 
+             team's formation, one should consider the positioning of the entire team. To 
+             do so, we first apply the ML model described in the previous tab to each of 
+             the 11 players on the starting 11. This gives us an $11 \times 10$ matrix, 
+             which we'll call $Y$, where the rows represent 11 players, and the columns 
+             represent the 10 possible positions. For the France vs Argentina, World Cup 
+             2018 match, this array for the French team looks as follows:""")
+    
     fig = pio.read_json('static/FranceProbs.json')
     st.plotly_chart(fig)
 
-with passing_networks_tab:
-    st.header(tab_names[3])
-
+    st.write("""Naively, we might take these predictions at face value and simply assign 
+             each player the position the ML model deems most probable. However, this 
+             sometimes leads to results which are unrealistic at the team-level. For example, 
+             we may end up with teams  that have two wingers but no striker, or two 
+             left-midfielders, or one left-midfielder but no right-midfielder. In particular, 
+             applying this naive approach to the above team would give us a front line 
+             consisting of two CF's and one RW. Anyone who watches soccer knows that this 
+             simply does not happen. Therefore, we need a robust way of deciding positions 
+             which prevents these unrealistic combinations.""")
+    
+    st.write("""Our procedure goes as follows. We consider six admissible formations: """)
+    st.latex(r"""F_{admissible} = \{\text{5-4-1, 5-3-2, 4-4-2, 4-3-3, 3-5-2, 3-4-3}\}""")
+    with st.expander(label = "Note about formations", expanded = False):
+        st.write("""In truth, there exist more formations than the ones listed above. 
+                 However, these six were the most prevalent within the ESPN dataset. Notably, the ESPN 
+                 dataset admits additional formations, namely 4-2-4, 4-5-1, and 2-5-3. However, these 
+                 are hardly seen in real life, and they can all be mapped to one of the six formations 
+                 listed above. In particular, we treated 4-2-4 as 4-4-2, 4-5-1 as 4-3-3, and 2-5-3.""")
+    st.write(r"""For each admissible formation, we attempt to assign the given team positions 
+             which abide by the formation. Formally, for a fixed formation $f \in F_{admissible}$, 
+             we assign players roles fitting that formation. These assignments are represented by an 
+             $11 \times 10$ binary matrix $C_f$ defined by """)  
+    st.latex(r"""(C_f)_{ij} = \begin{cases}
+                1 \text{ if player i is assigned position j} \\
+                0 \text{ otherwise}
+            \end{cases}""")  
+    with st.expander(label = "Constructing $C_f$", expanded  = False):
+        st.write(r"""I haven't actually described how to construct $C_f$ from $f$ at this point. In
+                 truth, there are several ways to do this. One can of course view this as a discrete
+                 optimization problem where the objective function is $E_Y$, and the feasible set is 
+                 the set of all choice matrices $C$ which represent choices that suit the given 
+                 formation $f$. However, this search-space seems a bit cumbersome to define (and we would 
+                 need to do so for all 6 admissible formations), and it might be more computationally 
+                 expensive than what is needed.""")
+        st.write("""My approach breaks down the problem into smaller optimization problems. The full process 
+                 is a bit long, and anyone who really wants to know can visit the GitHub repository. 
+                 (The process I'm about to describe can be found in `formation_inference.py`.)
+                 For following portions of this explanation, just assume we have a canonical way of
+                 obtaining $C_f$ given $f$.""")
+        st.caption("""TL;DR: there are several ways to construct $C_f$, but just assume we have a 
+                   canonical way of doing so for the rest of this explainer.""")
+    
+    st.write(r"""In order to evaluate the formation $f$, we want to measure how far the assigned 
+             positions specified by $C_f$ differ from the predictions of the ML model $Y$. In 
+             particular, we want to reward choices which choose the large entries of $Y$, and 
+             punish choices which do not choose the large entries of $Y$. So, we define the 
+             following evaluation metric:""")
+    st.latex(r"E_Y(C_f) = -\left(\sum_{ij}(Y \odot C)_{ij} - \sum_{ij}(Y \odot(\mathbf{1} - C))\right)")
+    st.write(r"""Here, $\mathbf{1}$ is the $11\times10$ matrix of all 1's, and $\odot$ is the 
+             element-wise product. The first sum is the sum of the entries in $Y$ which are 
+             chosen by $C$, and the second sum is the negative sum of all the entries not chosen 
+             by $C$. The negative sign at the front is there simply to frame this as a 
+             minimization problem rather than a maximization problem. This can be rewritten as 
+             follows""")
+    st.latex(r"E_Y(C_f) = - \sum_{ij}\left(Y \odot (2C - \mathbf{1})\right)_{ij}")
+    st.write(r"""Thus, deciding the team's formation amounts to finding an $f \in F_{admissible}$ 
+             that minimizes $E_Y$. In simple terms, choosing a formation for the team means choosing 
+             the formation that most closely resembles the suggestions of the ML model. """)
+    
 # discuss...
 # format of raw events_df 
 # events_df -> heatmaps
